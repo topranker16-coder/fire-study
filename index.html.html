@@ -1,1308 +1,842 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>스프링클러설비(NFPC/NFTC 103) 전체 계통도 & 법령 암기 시뮬레이터</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&family=Noto+Sans+KR:wght@400;500;600;700&family=Noto+Serif+KR:wght@600;700&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Noto Sans KR', 'Inter', sans-serif;
-      background-color: #070d19;
-      color: #e2e8f0;
-    }
-    .font-serif-kr {
-      font-family: 'Noto Serif KR', serif;
-    }
-    .font-mono-tech {
-      font-family: 'JetBrains Mono', monospace;
-    }
-    .math-var {
-      font-family: 'Times New Roman', 'Noto Serif KR', serif;
-      font-style: italic;
-      font-weight: 600;
-    }
-    /* 정밀 CAD 청사진 배경 */
-    .cad-blueprint {
-      background-color: #08101e;
-      background-image:
-        linear-gradient(to right, rgba(56, 189, 248, 0.05) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(56, 189, 248, 0.05) 1px, transparent 1px),
-        linear-gradient(to right, rgba(56, 189, 248, 0.11) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(56, 189, 248, 0.11) 1px, transparent 1px);
-      background-size: 20px 20px, 20px 20px, 100px 100px, 100px 100px;
-    }
-    /* 유체 및 전기 신호 흐름 애니메이션 */
-    @keyframes flowPipe {
-      to { stroke-dashoffset: -24; }
-    }
-    @keyframes flowElectric {
-      to { stroke-dashoffset: -16; }
-    }
-    .pipe-flow-active {
-      stroke-dasharray: 8 4;
-      animation: flowPipe 0.7s linear infinite;
-    }
-    .elec-flow-active {
-      stroke-dasharray: 4 4;
-      animation: flowElectric 0.5s linear infinite;
-    }
-    /* SVG 클릭 가능 노드 호버 효과 */
-    .pid-node {
-      cursor: pointer;
-      transition: filter 0.2s ease, transform 0.2s ease;
-    }
-    .pid-node:hover {
-      filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.85));
-    }
-    .pid-node-selected {
-      filter: drop-shadow(0 0 11px rgba(250, 204, 21, 0.95));
-    }
-    /* 빈칸 암기 모드 토글 칩 */
-    .cloze-blank {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 54px;
-      padding: 1px 8px;
-      margin: 0 2px;
-      border-radius: 6px;
-      background: linear-gradient(135deg, #1e293b, #0f172a);
-      border: 1.5px dashed #38bdf8;
-      color: #38bdf8;
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 700;
-      font-size: 0.82em;
-      cursor: pointer;
-      user-select: none;
-      transition: all 0.18s ease;
-    }
-    .cloze-blank:hover {
-      background: #0284c7;
-      color: #ffffff;
-      border-style: solid;
-    }
-    .cloze-revealed {
-      display: inline-flex;
-      align-items: center;
-      padding: 1px 6px;
-      margin: 0 2px;
-      border-radius: 6px;
-      background: rgba(16, 185, 129, 0.2);
-      border: 1px solid rgba(16, 185, 129, 0.5);
-      color: #6ee7b7;
-      font-weight: 700;
-      cursor: pointer;
-    }
-    /* 물방울 분사 애니메이션 */
-    @keyframes sprayDrop {
-      0% { opacity: 0.9; transform: translateY(0) scale(0.8); }
-      100% { opacity: 0; transform: translateY(28px) scale(1.2); }
-    }
-    .spray-anim {
-      animation: sprayDrop 0.65s ease-out infinite;
-    }
-    /* 스크롤바 */
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #090f1d; }
-    ::-webkit-scrollbar-thumb { background: #263449; border-radius: 9999px; }
-    ::-webkit-scrollbar-thumb:hover { background: #3b4f6e; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>화재안전기준(NFPC+NFTC) 통합 시퀀스 암기 학습기 — 1회차</title>
+<style>
+  :root {
+    --bg: #080d18;
+    --panel: #111827;
+    --card: #182235;
+    --border: #2c3b52;
+    --text: #f1f5f9;
+    --sub: #94a3b8;
+    --blue: #38bdf8;
+    --cyan: #22d3ee;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --green: #10b981;
+    --purple: #a78bfa;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+  header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border-bottom: 2px solid var(--cyan);
+    padding: 13px 20px;
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;
+    position: sticky; top: 0; z-index: 60;
+  }
+  .brand h1 { font-size: 1.12rem; color: #fff; }
+  .brand p { font-size: 0.77rem; color: var(--cyan); margin-top: 2px; }
+  .toolbar { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .toolbar input { background: #080d18; border: 1px solid var(--border); color: #fff; padding: 7px 11px; border-radius: 7px; width: 225px; font-size: 0.82rem; }
+  .toolbar input:focus { outline: none; border-color: var(--cyan); }
+  .btn { padding: 6px 11px; border-radius: 7px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: 0.15s; }
+  .btn:hover { border-color: var(--blue); background: #223047; }
+  .btn.blank-on { background: #b45309; border-color: #fde68a; color: #fff; box-shadow: 0 0 12px rgba(245,158,11,0.45); }
+  .btn.quiz-btn { background: #0369a1; border-color: var(--blue); color: #fff; }
+  .btn.active-filter { background: var(--cyan); border-color: #cffafe; color: #080d18; }
+
+  .progress-strip { background: #0d1424; border-bottom: 1px solid var(--border); padding: 8px 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; font-size: 0.78rem; }
+  .prog-bar-wrap { flex: 1; min-width: 140px; max-width: 380px; height: 10px; background: #1e293b; border-radius: 999px; overflow: hidden; }
+  .prog-bar-fill { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--green)); width: 0%; transition: width 0.3s; }
+
+  .layout { display: grid; grid-template-columns: 285px 1fr; min-height: calc(100vh - 110px); }
+  @media (max-width: 960px) { .layout { grid-template-columns: 1fr; } aside { border-right: none; border-bottom: 1px solid var(--border); } }
+
+  aside { background: var(--panel); border-right: 1px solid var(--border); padding: 10px; display: flex; flex-direction: column; gap: 4px; }
+  .nav-group-label { font-size: 0.72rem; color: var(--amber); font-weight: 700; padding: 9px 8px 3px; }
+  .nav-item { text-align: left; padding: 7px 10px; border-radius: 7px; border: 1px solid transparent; background: transparent; color: #cbd5e1; font-size: 0.79rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+  .nav-item:hover { background: var(--card); color: #fff; }
+  .nav-item.active { background: rgba(34,211,238,0.14); border-color: rgba(34,211,238,0.55); color: var(--cyan); font-weight: 700; }
+  .nav-badge { font-size: 0.68rem; padding: 1px 6px; border-radius: 999px; background: #0a101d; color: var(--sub); white-space: nowrap; }
+
+  main { padding: 18px 20px 55px; overflow-x: hidden; }
+  .module-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .module-header h2 { font-size: 1.08rem; color: var(--cyan); }
+  .module-header span { font-size: 0.8rem; color: var(--sub); }
+
+  .section-divider { margin: 20px 0 12px; padding: 9px 14px; border-radius: 8px; background: linear-gradient(90deg, rgba(34,211,238,0.16), rgba(15,23,42,0.4)); border-left: 4px solid var(--cyan); font-size: 0.94rem; font-weight: 700; color: #cffafe; }
+  .hl-num { color: #fde68a; font-weight: 700; background: rgba(245,158,11,0.14); padding: 0 3px; border-radius: 3px; }
+  .blank-chip { display: inline-block; background: #273549; color: transparent; border: 1.5px dashed var(--cyan); border-radius: 4px; padding: 0 6px; margin: 0 1px; cursor: pointer; user-select: none; text-shadow: 0 0 9px rgba(34,211,238,0.5); }
+  .blank-chip:hover { border-color: #fff; background: #334155; }
+  .blank-chip.revealed { color: #fde68a; background: rgba(245,158,11,0.25); border: 1.5px solid var(--amber); font-weight: 700; text-shadow: none; }
+
+  .rung { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 14px; overflow: hidden; }
+  .rung.memorized { border-left: 4px solid var(--green); }
+  .rung.energized { border-color: var(--green); box-shadow: 0 0 12px rgba(16,185,129,0.2); }
+  .rung.energized-pen { border-color: var(--red); box-shadow: 0 0 12px rgba(239,68,68,0.25); }
+  .rung-top { background: #141e32; padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--border); }
+  .rung-title { font-size: 0.88rem; font-weight: 700; color: #f8fafc; }
+  .rung-sub-tip { background: rgba(56,189,248,0.08); border-bottom: 1px solid #1e293b; padding: 6px 14px; font-size: 0.77rem; color: #7dd3fc; }
+
+  .ladder-flow { display: flex; align-items: stretch; padding: 11px 10px; overflow-x: auto; background: #0a101d; }
+  .rail-left, .rail-right { width: 5px; min-width: 5px; border-radius: 3px; }
+  .rail-left { background: var(--red); }
+  .rail-right { background: var(--blue); }
+  .wire-seg { display: flex; align-items: center; padding: 0 2px; }
+  .wire-line { width: 14px; height: 3px; background: #475569; }
+  .wire-line.hot { background: var(--amber); box-shadow: 0 0 5px var(--amber); }
+
+  .node { background: var(--card); border: 1.5px solid #475569; border-radius: 7px; padding: 7px 10px; min-width: 150px; max-width: 310px; font-size: 0.78rem; cursor: pointer; display: flex; flex-direction: column; justify-content: center; }
+  .node:hover { border-color: var(--cyan); }
+  .node-head { font-family: monospace; font-size: 0.71rem; font-weight: 700; margin-bottom: 3px; }
+  .node.type-a .node-head { color: var(--blue); }
+  .node.type-b .node-head { color: var(--amber); }
+  .node.type-t .node-head { color: var(--purple); }
+  .node.type-c .node-head { color: var(--cyan); }
+  .node.closed { border-color: var(--amber); background: rgba(245,158,11,0.12); }
+  .node.type-b.tripped { border-color: var(--red); border-style: dashed; opacity: 0.7; }
+
+  .or-group { border: 1.5px dashed #475569; border-radius: 8px; padding: 6px; background: rgba(15,23,42,0.7); display: flex; flex-direction: column; gap: 5px; min-width: 245px; max-width: 490px; }
+  .or-label { font-size: 0.68rem; color: var(--cyan); font-weight: 700; font-family: monospace; }
+  .or-item { background: var(--card); border: 1px solid #3b4b63; border-radius: 5px; padding: 5px 8px; font-size: 0.76rem; cursor: pointer; display: flex; gap: 6px; align-items: flex-start; }
+  .or-item:hover { border-color: var(--cyan); }
+  .or-item.on { border-color: var(--amber); background: rgba(245,158,11,0.16); }
+  .or-sym { font-family: monospace; color: var(--blue); font-weight: 700; white-space: nowrap; }
+
+  .coil { border-radius: 18px; padding: 8px 12px; min-width: 185px; max-width: 340px; font-size: 0.78rem; border: 2px solid #475569; background: #131c2e; display: flex; flex-direction: column; justify-content: center; }
+  .coil-head { font-family: monospace; font-size: 0.71rem; font-weight: 700; margin-bottom: 3px; }
+  .coil.type-out .coil-head { color: var(--green); }
+  .coil.type-pen .coil-head { color: #fca5a5; }
+  .coil.type-out.on { border-color: var(--green); background: rgba(16,185,129,0.18); }
+  .coil.type-pen.on { border-color: var(--red); background: rgba(239,68,68,0.22); }
+
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 14px; margin-bottom: 16px; }
+  .study-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 15px; }
+  .study-card h3 { font-size: 0.94rem; color: var(--amber); margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  th, td { border: 1px solid var(--border); padding: 7px 9px; text-align: left; vertical-align: top; }
+  th { background: #0f172a; color: var(--blue); }
+  tr:nth-child(even) { background: rgba(24,34,53,0.5); }
+  .mnemonic-badge { display: inline-block; background: rgba(167,139,250,0.2); border: 1px solid var(--purple); color: #ddd6fe; padding: 2px 8px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; margin-bottom: 7px; }
+
+  .quiz-box { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 18px; max-width: 900px; }
+  .quiz-q { font-size: 1rem; font-weight: 700; margin: 12px 0 14px; color: #fff; }
+  .quiz-opts { display: flex; flex-direction: column; gap: 8px; }
+  .quiz-opt { text-align: left; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-size: 0.86rem; cursor: pointer; }
+  .quiz-opt:hover { border-color: var(--cyan); }
+  .quiz-opt.correct { background: rgba(16,185,129,0.22); border-color: var(--green); color: #a7f3d0; font-weight: 700; }
+  .quiz-opt.wrong { background: rgba(239,68,68,0.22); border-color: var(--red); color: #fecaca; }
+  .quiz-exp { margin-top: 12px; padding: 11px 14px; border-radius: 8px; background: #0a101d; border-left: 4px solid var(--blue); font-size: 0.84rem; color: #cbd5e1; }
+
+  .form-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.82rem; gap: 8px; }
+  .form-row select, .form-row input { background: #080d18; border: 1px solid var(--border); color: #fff; padding: 5px 8px; border-radius: 5px; width: 175px; }
+  .res-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .res-pill { font-size: 0.76rem; padding: 5px 9px; border-radius: 6px; background: #0f172a; border: 1px solid #334155; color: #64748b; }
+  .res-pill.req { background: rgba(16,185,129,0.18); border-color: var(--green); color: #a7f3d0; font-weight: 700; }
+  .res-pill.warn { background: rgba(239,68,68,0.22); border-color: var(--red); color: #fecaca; font-weight: 700; }
+</style>
 </head>
-<body class="min-h-screen flex flex-col overflow-x-hidden">
+<body>
 
-  <!-- 최상단 통합 컨트롤 헤더 -->
-  <header class="bg-slate-950/95 border-b border-slate-800 sticky top-0 z-40 backdrop-blur-md">
-    <div class="max-w-[1720px] mx-auto px-3 sm:px-5 py-2.5 flex flex-wrap items-center justify-between gap-3">
-      
-      <!-- 브랜드 타이틀 -->
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-600 to-amber-500 p-[2px] shadow-lg shadow-rose-600/25 shrink-0">
-          <div class="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-            <svg class="w-6 h-6 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-            </svg>
-          </div>
-        </div>
-        <div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <h1 class="text-sm sm:text-base font-bold text-white tracking-tight">스프링클러설비(NFPC/NFTC 103) 마스터 P&ID 및 법령 암기 시뮬레이터</h1>
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30">
-              설치법·시행령·시행규칙·NFPC·NFTC 103 통합
-            </span>
-          </div>
-          <p class="text-[11px] text-slate-400 hidden sm:block">수조 → 가압송수장치 → 유수검지장치(5종) → 배관·헤드 → 감시제어반·MCC 전기 연동 전 계통 시각화</p>
-        </div>
-      </div>
-
-      <!-- 우측 핵심 제어 바: 유수검지장치 타입 전환 + 학습 모드 전환 + 화재 시뮬레이션 -->
-      <div class="flex flex-wrap items-center gap-2">
-        
-        <!-- 유수검지장치 5대 방식 선택 -->
-        <div class="flex items-center bg-slate-900 border border-slate-700/90 rounded-xl px-2.5 py-1.5 gap-2">
-          <span class="text-[11px] font-semibold text-amber-400 whitespace-nowrap">유수검지장치:</span>
-          <select id="valveTypeSelect" class="bg-slate-950 text-xs font-bold text-white border border-slate-700 rounded-lg px-2 py-1 focus:outline-none focus:border-amber-400 cursor-pointer">
-            <option value="WET">① 습식 (Wet Pipe / 알람밸브)</option>
-            <option value="PREACTION" selected>② 준비작동식 (Pre-action / SVP·교차회로)</option>
-            <option value="DRY">③ 건식 (Dry Pipe / 드라이밸브·압축공기)</option>
-            <option value="NEGATIVE">④ 부압식 (Negative Pressure / 진공감시)</option>
-            <option value="DELUGE">⑤ 일제살수식 (Deluge / 개방형헤드·델류지)</option>
-          </select>
-        </div>
-
-        <!-- 3가지 학습 모드 전환 버튼 -->
-        <div class="flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800" role="group">
-          <button type="button" id="modeExploreBtn" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-sky-600 text-white shadow transition cursor-pointer">
-            🔍 탐험 모드
-          </button>
-          <button type="button" id="modeClozeBtn" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition cursor-pointer">
-            🧠 빈칸 암기
-          </button>
-          <button type="button" id="modeQuizBtn" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition cursor-pointer">
-            📝 실기 시나리오
-          </button>
-        </div>
-
-        <!-- 화재 작동 시퀀스 시뮬레이션 버튼 -->
-        <button type="button" id="btnFireSim" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 text-white text-xs font-bold shadow-lg shadow-rose-600/30 flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
-          <span class="w-2 h-2 rounded-full bg-white animate-ping"></span>
-          <span id="fireSimBtnLabel">🔥 화재 연동 시뮬레이션</span>
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <!-- 메인 작업 공간 (좌측 7컬럼: 전체 계통도 P&ID + 하단 시뮬레이터 / 우측 5컬럼: 4단계 법령·기준 & 암기 패널) -->
-  <main class="flex-1 max-w-[1720px] w-full mx-auto grid grid-cols-1 xl:grid-cols-12">
-    
-    <!-- [좌측 7컬럼] P&ID 계통도 캔버스 및 인터랙티브 공학 도구 -->
-    <section class="xl:col-span-7 flex flex-col border-b xl:border-b-0 xl:border-r border-slate-800 bg-slate-950">
-      
-      <!-- 계통도 상단 범례 및 구간 퀵 점프 -->
-      <div class="px-4 py-2 bg-slate-900/90 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px]">
-        <div class="flex flex-wrap items-center gap-3">
-          <span class="font-bold text-slate-300">배관·신호 범례:</span>
-          <span class="inline-flex items-center gap-1 text-sky-300"><span class="w-3 h-1 bg-sky-400 inline-block rounded"></span>수원/흡입관</span>
-          <span class="inline-flex items-center gap-1 text-rose-400"><span class="w-3 h-1 bg-rose-500 inline-block rounded"></span>1차측 가압수</span>
-          <span class="inline-flex items-center gap-1 text-emerald-300"><span class="w-3 h-1 bg-emerald-400 inline-block rounded"></span>2차측 배관(물/공기/부압)</span>
-          <span class="inline-flex items-center gap-1 text-amber-300"><span class="w-3 h-0.5 border-t-2 border-dashed border-amber-400 inline-block"></span>전기 제어/감시선</span>
-        </div>
-        <div class="text-slate-400 font-mono-tech">
-          💡 도면의 각 부품(박스)을 클릭하세요
-        </div>
-      </div>
-
-      <!-- 화재 시뮬레이션 진행 상태 배너 (시뮬레이션 가동 시 표시) -->
-      <div id="fireSimBanner" class="hidden bg-gradient-to-r from-rose-950 via-slate-900 to-amber-950 border-b border-rose-500/40 px-4 py-2.5">
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
-          <div class="flex items-center gap-2">
-            <span class="px-2 py-0.5 rounded bg-rose-600 text-white text-[10px] font-bold animate-pulse">LIVE SEQUENCE</span>
-            <span id="simStepTitle" class="text-xs sm:text-sm font-bold text-amber-200">시퀀스 대기 중...</span>
-          </div>
-          <button type="button" id="btnStopSim" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-600 cursor-pointer">
-            복구(Reset)
-          </button>
-        </div>
-        <!-- 6단계 진행 바 -->
-        <div class="grid grid-cols-6 gap-1.5 text-[10px] font-semibold text-center">
-          <div id="stepPill1" class="py-1 px-1 rounded bg-slate-800/80 text-slate-400 border border-slate-700">1. 감지기 작동</div>
-          <div id="stepPill2" class="py-1 px-1 rounded bg-slate-800/80 text-slate-400 border border-slate-700">2. SVP/기동개방</div>
-          <div id="stepPill3" class="py-1 px-1 rounded bg-slate-800/80 text-slate-400 border border-slate-700">3. 2차측 가압</div>
-          <div id="stepPill4" class="py-1 px-1 rounded bg-slate-800/80 text-slate-400 border border-slate-700">4. PS 작동·펌프기동</div>
-          <div id="stepPill5" class="py-1 px-1 rounded bg-slate-800/80 text-slate-400 border border-slate-700">5. 수신기 경보</div>
-          <div id="stepPill6" class="py-1 px-1 rounded bg-slate-800/80 text-slate-400 border border-slate-700">6. 헤드 개방·방수</div>
-        </div>
-      </div>
-
-      <!-- 메인 P&ID SVG 다이어그램 컨테이너 -->
-      <div class="cad-blueprint relative w-full overflow-x-auto p-2 sm:p-4 flex-1 flex items-center justify-center">
-        <svg id="sprinklerPidSvg" viewBox="0 0 1120 670" class="w-full min-w-[820px] max-w-[1120px] h-auto select-none">
-          <defs>
-            <!-- 화살표 마커 -->
-            <marker id="arrowBlue" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-              <path d="M 0 1 L 10 5 L 0 9 z" fill="#38bdf8" />
-            </marker>
-            <marker id="arrowRed" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-              <path d="M 0 1 L 10 5 L 0 9 z" fill="#f43f5e" />
-            </marker>
-            <marker id="arrowGreen" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-              <path d="M 0 1 L 10 5 L 0 9 z" fill="#34d399" />
-            </marker>
-            <marker id="arrowAmber" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-              <path d="M 0 1 L 10 5 L 0 9 z" fill="#fbbf24" />
-            </marker>
-          </defs>
-
-          <!-- =============================================================== -->
-          <!-- 배경 구획 영역 라벨 (1구간 ~ 5구간)                               -->
-          <!-- =============================================================== -->
-          <!-- 1구간: 수원 & 흡입측 -->
-          <rect x="12" y="14" width="235" height="445" rx="10" fill="rgba(14, 165, 233, 0.04)" stroke="rgba(56, 189, 248, 0.25)" stroke-dasharray="4 4" />
-          <text x="24" y="34" fill="#38bdf8" font-size="11" font-weight="700">1구간 · 수원 및 흡입측 (NFTC 103 §2.1)</text>
-
-          <!-- 2구간: 가압송수장치 & 성능시험배관 -->
-          <rect x="260" y="14" width="295" height="445" rx="10" fill="rgba(244, 63, 94, 0.04)" stroke="rgba(244, 63, 94, 0.25)" stroke-dasharray="4 4" />
-          <text x="272" y="34" fill="#fb7185" font-size="11" font-weight="700">2구간 · 가압송수장치 &amp; 성능시험 (§2.2)</text>
-
-          <!-- 3구간: 유수검지장치실 -->
-          <rect x="568" y="14" width="245" height="445" rx="10" fill="rgba(245, 158, 11, 0.04)" stroke="rgba(245, 158, 11, 0.28)" stroke-dasharray="4 4" />
-          <text x="580" y="34" fill="#fbbf24" font-size="11" font-weight="700">3구간 · 유수검지장치실 (§2.4·2.7)</text>
-
-          <!-- 4구간: 교차·가지배관 & 헤드·말단시험 -->
-          <rect x="826" y="14" width="282" height="445" rx="10" fill="rgba(16, 185, 129, 0.04)" stroke="rgba(16, 185, 129, 0.28)" stroke-dasharray="4 4" />
-          <text x="838" y="34" fill="#34d399" font-size="11" font-weight="700">4구간 · 배관·헤드·말단시험 (§2.5·2.6)</text>
-
-          <!-- 5구간: 하단 전기 제어 계통도 (감시제어반 · MCC · 수신기) -->
-          <rect x="12" y="472" width="1096" height="186" rx="10" fill="rgba(250, 204, 21, 0.04)" stroke="rgba(250, 204, 21, 0.3)" stroke-dasharray="5 3" />
-          <text x="24" y="492" fill="#facc15" font-size="11" font-weight="700">5구간 · 전기 제어·감시 계통도 (감시제어반 · 동력제어반 MCC · SVP · R형/P형 수신기 · 비상전원)</text>
-
-          <!-- =============================================================== -->
-          <!-- 기계 배관 라인 (기저 배관)                                      -->
-          <!-- =============================================================== -->
-          <!-- 지하수조 -> 흡입관 -> 주펌프 -->
-          <path id="pipeSuction" d="M 115 385 L 115 330 L 315 330" fill="none" stroke="#38bdf8" stroke-width="5" stroke-linejoin="round" marker-end="url(#arrowBlue)" />
-          <!-- 물올림장치 -> 흡입관 -->
-          <path d="M 195 235 L 195 330" fill="none" stroke="#38bdf8" stroke-width="3" stroke-dasharray="3 2" />
-          <!-- 옥상수조 -> 입상관 합류 -->
-          <path id="pipeRoofTank" d="M 115 135 L 115 165 L 542 165 L 542 290" fill="none" stroke="#38bdf8" stroke-width="3.5" stroke-linejoin="round" />
-
-          <!-- 주펌프 토출 -> 1차측 수직 입상관 -> 유수검지장치 -->
-          <path id="pipePrimary" d="M 385 330 L 542 330 L 542 290 L 635 290" fill="none" stroke="#f43f5e" stroke-width="5" stroke-linejoin="round" marker-end="url(#arrowRed)" />
-          <!-- 충압펌프 병렬 배관 -->
-          <path d="M 275 330 L 275 395 L 315 395" fill="none" stroke="#38bdf8" stroke-width="3" />
-          <path d="M 385 395 L 430 395 L 430 330" fill="none" stroke="#f43f5e" stroke-width="3" />
-          <!-- 압력챔버 연결 -->
-          <path d="M 465 330 L 465 380" fill="none" stroke="#f43f5e" stroke-width="3" />
-          <!-- 순환배관 (릴리프밸브 -> 수조) -->
-          <path d="M 410 330 L 410 255 L 145 255 L 145 350" fill="none" stroke="#fb7185" stroke-width="2.5" stroke-dasharray="4 2" />
-          <!-- 성능시험배관 (유량계 -> 수조 환원) -->
-          <path id="pipePerfTest" d="M 495 330 L 495 198 L 310 198 L 310 255" fill="none" stroke="#f43f5e" stroke-width="3" />
-
-          <!-- 유수검지장치 2차측 -> 교차배관 -> 가지배관 -->
-          <path id="pipeSecondaryMain" d="M 735 290 L 855 290 L 855 135 L 1065 135" fill="none" stroke="#34d399" stroke-width="5" stroke-linejoin="round" marker-end="url(#arrowGreen)" />
-          <!-- 가지배관 1, 2, 3 분기 -->
-          <path id="pipeBranch1" d="M 895 135 L 895 215" fill="none" stroke="#34d399" stroke-width="3.5" />
-          <path id="pipeBranch2" d="M 960 135 L 960 215" fill="none" stroke="#34d399" stroke-width="3.5" />
-          <path id="pipeBranch3" d="M 1025 135 L 1025 215" fill="none" stroke="#34d399" stroke-width="3.5" />
-          <!-- 말단시험장치 배관 -->
-          <path id="pipeEndTest" d="M 1025 215 L 1025 320" fill="none" stroke="#34d399" stroke-width="3" />
-
-          <!-- =============================================================== -->
-          <!-- 전기 제어 배선 (노란색 점선)                                    -->
-          <!-- =============================================================== -->
-          <!-- 감지기 A/B -> SVP -> 솔레노이드밸브 -->
-          <path id="wireDetectorToSvp" d="M 960 72 L 770 72 L 770 135" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-dasharray="5 3" marker-end="url(#arrowAmber)" />
-          <path id="wireSvpToValve" d="M 735 182 L 690 245" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-dasharray="5 3" marker-end="url(#arrowAmber)" />
-          <!-- PS / TS -> 감시제어반(MCC) -> 수신기 -->
-          <path id="wireValveToMcc" d="M 675 342 L 675 512" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-dasharray="5 3" marker-end="url(#arrowAmber)" />
-          <path id="wireChamberToMcc" d="M 465 432 L 465 512" fill="none" stroke="#fbbf24" stroke-width="2.2" stroke-dasharray="5 3" marker-end="url(#arrowAmber)" />
-          <path id="wireMccToPump" d="M 350 512 L 350 362" fill="none" stroke="#f97316" stroke-width="2.5" stroke-dasharray="5 3" marker-end="url(#arrowAmber)" />
-          <path id="wireMccToReceiver" d="M 555 575 L 625 575" fill="none" stroke="#fbbf24" stroke-width="2.5" stroke-dasharray="5 3" marker-end="url(#arrowAmber)" />
-          <path id="wireEmergencyPower" d="M 245 575 L 310 575" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="5 3" marker-end="url(#arrowBlue)" />
-
-          <!-- =============================================================== -->
-          <!-- 클릭 가능한 P&ID 노드들 (부품 박스)                            -->
-          <!-- =============================================================== -->
-
-          <!-- [노드 1] 옥상수조 -->
-          <g class="pid-node" data-part="roof_tank" transform="translate(32, 52)">
-            <rect width="166" height="82" rx="8" fill="#0f172a" stroke="#38bdf8" stroke-width="2" />
-            <rect x="8" y="42" width="150" height="32" rx="4" fill="rgba(56, 189, 248, 0.25)" />
-            <text x="83" y="20" text-anchor="middle" fill="#7dd3fc" font-size="11" font-weight="700">옥상수조 (고가수조)</text>
-            <text x="83" y="35" text-anchor="middle" fill="#cbd5e1" font-size="9.5">유효수량의 1/3 이상 확보</text>
-            <text x="83" y="61" text-anchor="middle" fill="#e0f2fe" font-size="9.5" font-weight="600">면제조건 6가지 암기 필수</text>
-          </g>
-
-          <!-- [노드 2] 물올림장치 -->
-          <g class="pid-node" data-part="priming_tank" transform="translate(135, 178)">
-            <rect width="102" height="58" rx="7" fill="#0f172a" stroke="#38bdf8" stroke-width="1.8" />
-            <text x="51" y="18" text-anchor="middle" fill="#7dd3fc" font-size="10" font-weight="700">물올림장치</text>
-            <text x="51" y="32" text-anchor="middle" fill="#e2e8f0" font-size="9">수조 100L 이상</text>
-            <text x="51" y="45" text-anchor="middle" fill="#94a3b8" font-size="8.5">급수15·물올림25mm</text>
-          </g>
-
-          <!-- [노드 3] 지하수조 (주수원) -->
-          <g class="pid-node" data-part="main_tank" transform="translate(26, 352)">
-            <rect width="185" height="92" rx="8" fill="#0f172a" stroke="#0284c7" stroke-width="2.5" />
-            <rect x="8" y="44" width="169" height="40" rx="4" fill="rgba(2, 132, 199, 0.35)" />
-            <text x="92" y="20" text-anchor="middle" fill="#38bdf8" font-size="11.5" font-weight="700">지하수조 (주수원)</text>
-            <text x="92" y="36" text-anchor="middle" fill="#f8fafc" font-size="10" font-weight="600">Q = N × 1.6 ㎥ 이상</text>
-            <text x="92" y="62" text-anchor="middle" fill="#bae6fd" font-size="9.5">후드밸브 · 스트레이너 · 연성계</text>
-            <text x="92" y="76" text-anchor="middle" fill="#7dd3fc" font-size="9">흡입측 OS&amp;Y밸브(템퍼S/W)</text>
-          </g>
-
-          <!-- [노드 4] 주펌프 & 충압펌프 -->
-          <g class="pid-node" data-part="main_pump" transform="translate(308, 298)">
-            <rect width="84" height="64" rx="8" fill="#1e1b4b" stroke="#f43f5e" stroke-width="2.2" />
-            <circle cx="42" cy="24" r="13" fill="#be123c" stroke="#fda4af" stroke-width="2" />
-            <text x="42" y="28" text-anchor="middle" fill="#ffffff" font-size="10" font-weight="700">P1</text>
-            <text x="42" y="49" text-anchor="middle" fill="#fecdd3" font-size="10" font-weight="700">주펌프</text>
-            <text x="42" y="60" text-anchor="middle" fill="#fda4af" font-size="8.5">0.1~1.2MPa</text>
-          </g>
-
-          <g class="pid-node" data-part="jockey_pump" transform="translate(314, 374)">
-            <rect width="72" height="44" rx="6" fill="#0f172a" stroke="#fb7185" stroke-width="1.8" />
-            <text x="36" y="18" text-anchor="middle" fill="#fda4af" font-size="9.5" font-weight="700">충압펌프</text>
-            <text x="36" y="32" text-anchor="middle" fill="#cbd5e1" font-size="8.5">60L/min 이상</text>
-          </g>
-
-          <!-- [노드 5] 압력챔버 (기동용수압개폐장치) -->
-          <g class="pid-node" data-part="pressure_chamber" transform="translate(432, 376)">
-            <rect width="106" height="56" rx="8" fill="#0f172a" stroke="#f43f5e" stroke-width="1.8" />
-            <text x="53" y="18" text-anchor="middle" fill="#fda4af" font-size="10" font-weight="700">압력챔버 (100L↑)</text>
-            <text x="53" y="32" text-anchor="middle" fill="#e2e8f0" font-size="9">기동용수압개폐장치</text>
-            <text x="53" y="46" text-anchor="middle" fill="#fbbf24" font-size="8.5">주·충압 기동/정지점</text>
-          </g>
-
-          <!-- [노드 6] 성능시험배관 & 순환배관 -->
-          <g class="pid-node" data-part="perf_test_pipe" transform="translate(285, 118)">
-            <rect width="235" height="68" rx="8" fill="#0f172a" stroke="#fb7185" stroke-width="2" />
-            <text x="117" y="19" text-anchor="middle" fill="#fda4af" font-size="10.5" font-weight="700">성능시험배관 &amp; 순환배관(릴리프)</text>
-            <text x="117" y="35" text-anchor="middle" fill="#f8fafc" font-size="9.5">체절 ≤ 140% | 정격 100% | 150% ≥ 65%</text>
-            <text x="117" y="51" text-anchor="middle" fill="#94a3b8" font-size="8.5">순환배관 20mm↑ (체절압력 미만 개방)</text>
-          </g>
-
-          <!-- [노드 7] 슈퍼비조리판넬 (SVP) -->
-          <g class="pid-node" data-part="svp_panel" transform="translate(692, 114)">
-            <rect width="110" height="68" rx="8" fill="#1e293b" stroke="#fbbf24" stroke-width="2" />
-            <text x="55" y="19" text-anchor="middle" fill="#fde047" font-size="10" font-weight="700">SVP (감시제어반)</text>
-            <text x="55" y="34" text-anchor="middle" fill="#f8fafc" font-size="9">교차회로 A·B 감지</text>
-            <text x="55" y="49" text-anchor="middle" fill="#38bdf8" font-size="8.5">솔레노이드밸브 개방</text>
-            <text x="55" y="61" text-anchor="middle" fill="#94a3b8" font-size="8">수동기동스위치 내장</text>
-          </g>
-
-          <!-- [노드 8] 유수검지장치 (핵심 밸브 본체) -->
-          <g class="pid-node" data-part="alarm_valve" transform="translate(585, 232)">
-            <rect width="180" height="112" rx="10" fill="#1c1917" stroke="#f59e0b" stroke-width="2.5" />
-            <text x="90" y="21" text-anchor="middle" fill="#fbbf24" font-size="11" font-weight="700">유수검지장치실</text>
-            <text id="svgValveTypeTitle" x="90" y="38" text-anchor="middle" fill="#ffffff" font-size="10.5" font-weight="700">② 준비작동식 유수검지장치</text>
-            <rect x="12" y="47" width="156" height="24" rx="4" fill="rgba(245, 158, 11, 0.2)" />
-            <text id="svgValveChamberState" x="90" y="62" text-anchor="middle" fill="#fde68a" font-size="9" font-weight="600">1차측: 가압수 / 2차측: 대기압</text>
-            <text x="90" y="84" text-anchor="middle" fill="#cbd5e1" font-size="8.8">PS(압력S/W) · TS(템퍼S/W)</text>
-            <text x="90" y="99" text-anchor="middle" fill="#94a3b8" font-size="8.5">방호구역 3,000㎡ 이하 (격자 3,700)</text>
-          </g>
-
-          <!-- [노드 9] 교차배관 & 가지배관 -->
-          <g class="pid-node" data-part="branch_pipes" transform="translate(842, 48)">
-            <rect width="250" height="58" rx="8" fill="#0f172a" stroke="#34d399" stroke-width="2" />
-            <text x="125" y="18" text-anchor="middle" fill="#6ee7b7" font-size="10.5" font-weight="700">교차배관(40mm↑) &amp; 가지배관(8개↓)</text>
-            <text x="125" y="33" text-anchor="middle" fill="#e2e8f0" font-size="9">토너먼트 배관 금지 · 청소구 설치</text>
-            <text x="125" y="47" text-anchor="middle" fill="#fbbf24" font-size="8.5">교차회로 감지기 A · 감지기 B 연동</text>
-          </g>
-
-          <!-- [노드 10] 스프링클러 헤드 (3개 대표 헤드 + 방수 효과) -->
-          <g class="pid-node" data-part="sprinkler_heads" transform="translate(858, 195)">
-            <rect width="185" height="78" rx="8" fill="#0f172a" stroke="#10b981" stroke-width="2" />
-            <!-- 헤드 아이콘 3개 -->
-            <circle cx="37" cy="20" r="7" fill="#059669" stroke="#a7f3d0" stroke-width="1.5" />
-            <circle cx="102" cy="20" r="7" fill="#059669" stroke="#a7f3d0" stroke-width="1.5" />
-            <circle cx="167" cy="20" r="7" fill="#059669" stroke="#a7f3d0" stroke-width="1.5" />
-            <!-- 물 분사 애니메이션 그룹 (시뮬레이션 마지막 단계에 활성화) -->
-            <g id="waterSprayGroup" class="hidden">
-              <path d="M 37 27 L 23 48 M 37 27 L 37 50 M 37 27 L 51 48" stroke="#38bdf8" stroke-width="2" class="spray-anim" />
-              <path d="M 102 27 L 88 48 M 102 27 L 102 50 M 102 27 L 116 48" stroke="#38bdf8" stroke-width="2" class="spray-anim" />
-              <path d="M 167 27 L 153 48 M 167 27 L 167 50 M 167 27 L 181 48" stroke="#38bdf8" stroke-width="2" class="spray-anim" />
-            </g>
-            <text x="92" y="46" text-anchor="middle" fill="#6ee7b7" font-size="10" font-weight="700">스프링클러 헤드 (0.1~1.2MPa)</text>
-            <text x="92" y="60" text-anchor="middle" fill="#e2e8f0" font-size="8.8">수평거리: 2.1m / 내화 2.3m / 무대 1.7m</text>
-            <text x="92" y="72" text-anchor="middle" fill="#fde047" font-size="8.5">조기반응형 의무 대상 5종 암기</text>
-          </g>
-
-          <!-- [노드 11] 말단시험장치 -->
-          <g class="pid-node" data-part="end_test_valve" transform="translate(940, 322)">
-            <rect width="152" height="66" rx="8" fill="#0f172a" stroke="#34d399" stroke-width="1.8" />
-            <text x="76" y="19" text-anchor="middle" fill="#6ee7b7" font-size="10" font-weight="700">말단시험장치</text>
-            <text x="76" y="34" text-anchor="middle" fill="#e2e8f0" font-size="9">배관 구경 25mm 이상</text>
-            <text x="76" y="48" text-anchor="middle" fill="#cbd5e1" font-size="8.5">압력계 · 개폐밸브 · 오리피스</text>
-            <text x="76" y="60" text-anchor="middle" fill="#94a3b8" font-size="8">유수검지장치별 1개 이상</text>
-          </g>
-
-          <!-- =============================================================== -->
-          <!-- 5구간 전기 제어 패널 노드들                                     -->
-          <!-- =============================================================== -->
-          <!-- [노드 12] 비상전원 -->
-          <g class="pid-node" data-part="emergency_power" transform="translate(32, 514)">
-            <rect width="212" height="122" rx="9" fill="#0f172a" stroke="#38bdf8" stroke-width="2" />
-            <text x="106" y="22" text-anchor="middle" fill="#38bdf8" font-size="11" font-weight="700">비상전원 설비 (NFTC 103 §2.10)</text>
-            <text x="106" y="41" text-anchor="middle" fill="#f8fafc" font-size="9.5">자가발전설비 · 축전지 · 전기저장장치</text>
-            <text x="106" y="59" text-anchor="middle" fill="#fde047" font-size="9.5" font-weight="600">작동시간: 20분 이상 (30층↑ 40분,</text>
-            <text x="106" y="74" text-anchor="middle" fill="#fde047" font-size="9.5" font-weight="600">50층↑ 60분 이상 유효 작동)</text>
-            <text x="106" y="94" text-anchor="middle" fill="#94a3b8" font-size="8.5">상용전원 정전 시 자동 절체</text>
-            <text x="106" y="109" text-anchor="middle" fill="#7dd3fc" font-size="8.5">전용 배선 · 내화배선 시공</text>
-          </g>
-
-          <!-- [노드 13] 감시제어반 & 동력제어반 (MCC) -->
-          <g class="pid-node" data-part="mcc_panel" transform="translate(312, 514)">
-            <rect width="242" height="122" rx="9" fill="#1e1b4b" stroke="#facc15" stroke-width="2.2" />
-            <text x="121" y="22" text-anchor="middle" fill="#fde047" font-size="11" font-weight="700">감시제어반 &amp; 동력제어반 (MCC)</text>
-            <text x="121" y="41" text-anchor="middle" fill="#f8fafc" font-size="9.5">수조 저수위 감시 · 펌프 기동/정지 표시</text>
-            <text x="121" y="58" text-anchor="middle" fill="#fda4af" font-size="9.5">템퍼스위치(TS) 밸브 폐쇄 주의경보</text>
-            <text x="121" y="75" text-anchor="middle" fill="#6ee7b7" font-size="9.5">압력스위치(PS) 유수검지 신호 중계</text>
-            <text x="121" y="93" text-anchor="middle" fill="#cbd5e1" font-size="8.5">전용실 설치(방화구획 · 비상조명 · 환기)</text>
-            <text x="121" y="109" text-anchor="middle" fill="#94a3b8" font-size="8.5">외함 두께: 강판 1.5mm 이상</text>
-          </g>
-
-          <!-- [노드 14] 방재실 R형/P형 수신기 & 타설비 연동 -->
-          <g class="pid-node" data-part="fire_receiver" transform="translate(626, 514)">
-            <rect width="456" height="122" rx="9" fill="#0f172a" stroke="#fb923c" stroke-width="2.2" />
-            <text x="228" y="22" text-anchor="middle" fill="#fdba74" font-size="11" font-weight="700">방재실 수신기 (R형/P형) &amp; 타 소방시설 인터록 연동</text>
-            <text x="228" y="42" text-anchor="middle" fill="#f8fafc" font-size="9.5">① 유수검지장치 PS 작동 → 지구표시등 점등 + 주경종·지구경종·비상방송 연동</text>
-            <text x="228" y="60" text-anchor="middle" fill="#fde047" font-size="9.5">② 제연설비(NFTC 501) 댐퍼 개방 · 방화셔터 폐쇄 · 피난구 유도등 점등</text>
-            <text x="228" y="78" text-anchor="middle" fill="#7dd3fc" font-size="9.5">③ 템퍼스위치(TS) 개폐밸브 잠금 시 수신기 '밸브주의' 도통·표시 경보</text>
-            <text x="228" y="98" text-anchor="middle" fill="#94a3b8" font-size="8.8">※ 주펌프는 압력스위치(PS)에 의해 자동 기동되나, 정지는 반드시 수동 정지 원칙!</text>
-          </g>
-        </svg>
-      </div>
-
-      <!-- 하단 미니 엔지니어링 계산기 & P-Q 성능시험 곡선 바 -->
-      <div class="bg-slate-900/95 border-t border-slate-800 px-4 py-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-        <!-- 실시간 수원·펌프 산정 요약 -->
-        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col justify-between">
-          <div class="flex items-center justify-between mb-1.5">
-            <span class="text-xs font-bold text-sky-400">⚡ 실시간 수원·가압송수장치 연산기 (NFTC 103)</span>
-            <select id="quickBuildingSelect" class="bg-slate-900 border border-slate-700 text-[11px] text-slate-200 rounded px-2 py-0.5 cursor-pointer">
-              <option value="apt_15">아파트 (15층 · 10개)</option>
-              <option value="mall_12" selected>판매시설·복합 (12층 · 30개)</option>
-              <option value="warehouse">특수가연물 창고 (30개)</option>
-              <option value="office_8">일반 업무시설 (8층 · 8m미만 · 10개)</option>
-            </select>
-          </div>
-          <div id="quickCalcResult" class="grid grid-cols-3 gap-2 text-center text-xs mt-1">
-            <!-- JS 동적 업데이트 -->
-          </div>
-        </div>
-
-        <!-- 펌프 성능시험배관 P-Q 운전점 시뮬레이션 -->
-        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3">
-          <div class="flex items-center justify-between mb-1.5">
-            <span class="text-xs font-bold text-rose-400">📈 성능시험배관 운전점 검증 (§2.2)</span>
-            <div class="flex gap-1">
-              <button type="button" data-pq="0" class="pq-btn px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 hover:bg-rose-600 hover:text-white cursor-pointer">체절(0%)</button>
-              <button type="button" data-pq="100" class="pq-btn px-2 py-0.5 rounded text-[10px] font-bold bg-rose-600 text-white cursor-pointer">정격(100%)</button>
-              <button type="button" data-pq="150" class="pq-btn px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 hover:bg-rose-600 hover:text-white cursor-pointer">과부하(150%)</button>
-            </div>
-          </div>
-          <div id="pqStatusText" class="text-[11px] text-slate-300 leading-snug">
-            정격토출량(<span class="math-var">Q</span> = 100%) 운전 시 정격토출압력(<span class="math-var">P</span> = 100%, 0.1~1.2 MPa)을 유지합니다.
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- [우측 5컬럼] 4단계 법령·기준 매핑 & 학습/암기 인스펙터 -->
-    <section class="xl:col-span-5 bg-slate-900/70 flex flex-col h-full">
-      
-      <!-- 학습 모드 안내 바 -->
-      <div id="studyModeBanner" class="px-4 py-2.5 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <span id="modeBadge" class="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/40 text-[11px] font-bold">탐험 모드</span>
-          <span id="modeDesc" class="text-xs text-slate-400">계통도 부품을 클릭해 법령·기준·실기 포인트를 확인하세요.</span>
-        </div>
-        <button type="button" id="btnRevealAllCloze" class="hidden px-2.5 py-1 rounded bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/40 text-[11px] font-semibold cursor-pointer">
-          전체 정답 보기/숨기기
-        </button>
-      </div>
-
-      <!-- 모드 A & B: 부품별 4단계 법령 계층 상세 뷰 (탐험 모드 / 빈칸 암기 모드 공용) -->
-      <div id="inspectorLawContainer" class="flex-1 overflow-y-auto p-4 space-y-3.5">
-        <!-- JS로 선택된 부품의 4단계 법령 카드 렌더링 -->
-      </div>
-
-      <!-- 모드 C: 2차 실기 시나리오 판정 훈련 패널 (실기 시나리오 탭 선택 시 표시) -->
-      <div id="quizScenarioContainer" class="hidden flex-1 overflow-y-auto p-4 space-y-4">
-        <!-- JS로 실기 문제 및 채점 UI 렌더링 -->
-      </div>
-
-    </section>
-  </main>
-
-  <!-- 토스트 메시지 -->
-  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
-    <div class="bg-slate-900 border border-amber-400/60 text-white px-4 py-2.5 rounded-xl shadow-2xl text-xs font-semibold flex items-center gap-2">
-      <span class="w-2 h-2 rounded-full bg-amber-400"></span>
-      <span id="toastMsg">알림</span>
-    </div>
+<header>
+  <div class="brand">
+    <h1>🔥 화재안전기준(NFPC+NFTC) 통합 시퀀스 암기 학습기</h1>
+    <p>1회차: 소화기구·자동소화장치 / 상수도소화용수 / 소화수조·저수조 / 연결송수관 / 연결살수 (기준번호 X · 누락 없음)</p>
   </div>
+  <div class="toolbar">
+    <input type="text" id="searchInput" placeholder="통합 검색 (예: 0.5m, 140m, K급, 70m)..." oninput="renderMain()">
+    <button class="btn" id="btnBlank" onclick="toggleBlankMode()">🧠 빈칸 암기모드: OFF</button>
+    <button class="btn" onclick="revealAllBlanks()">👁️ 현재 빈칸 열기</button>
+    <button class="btn quiz-btn" onclick="switchView('quiz')">📝 실전 암기 퀴즈</button>
+  </div>
+</header>
 
-  <script>
-    // =========================================================================
-    // 1. 유수검지장치 5대 방식별 특성 데이터
-    // =========================================================================
-    const VALVE_TYPES = {
-      WET: {
-        title: '① 습식 유수검지장치 (알람밸브)',
-        chamberState: '1차측: 가압수 / 2차측: 가압수 (항시 충수)',
-        desc: '1·2차측 모두 가압수가 차 있어 헤드 개방 즉시 살수되며 구조가 단순하나, 동결 우려가 없는 난방 장소에만 설치 가능합니다.',
-        simSteps: [
-          '화재 열기 상승 → 폐쇄형 스프링클러헤드 감열체(퓨지블링크/유리벌브) 파손!',
-          '2차측 배관 압력 급강하 → 1차측 가압수가 알람밸브 클래퍼를 밀어 올리며 개방',
-          '가압수가 2차측 교차·가지배관을 통과하여 개방된 헤드로 즉시 초기 살수 개시',
-          '리타딩챔버를 거쳐 압력스위치(PS) 접점 작동 → 감시제어반 주펌프 자동 기동',
-          '방재실 수신기 화재표시등 점등 및 지구경종·비상방송설비 연동 경보 발령',
-          '주펌프 연속 가압 운전으로 정격 방수압력(0.1~1.2 MPa) 유지 및 화재 진압'
-        ]
-      },
-      PREACTION: {
-        title: '② 준비작동식 유수검지장치 (프리액션밸브)',
-        chamberState: '1차측: 가압수 / 2차측: 대기압(또는 저압공기)',
-        desc: '교차회로 감지기(A·B회로) 작동 시 SVP가 솔레노이드밸브를 개방하여 2차측에 물을 채우고, 이후 헤드 개방 시 살수하는 방식입니다. 오작동 수손 피해 방지에 최적입니다.',
-        simSteps: [
-          '화재 발생 → 천장의 교차회로 감지기 A회로 및 B회로 동시 감지 작동!',
-          '감지기 신호 수신 → 슈퍼비조리판넬(SVP)이 프리액션밸브 솔레노이드밸브 개방',
-          '1차측 가압수가 클래퍼를 열고 2차측 배관 전체로 급속 충수(가압 전환)',
-          '유수검지장치 압력스위치(PS) 작동 → 감시제어반(MCC) 주펌프 자동 기동',
-          '방재실 수신기 화재표시등·음향경보 및 제연설비·방화셔터 연동 작동',
-          '화재 열기로 폐쇄형 헤드 감열체 파손 시 2차측에 대기 중이던 물이 즉시 방수!'
-        ]
-      },
-      DRY: {
-        title: '③ 건식 유수검지장치 (드라이밸브)',
-        chamberState: '1차측: 가압수 / 2차측: 압축공기(또는 질소)',
-        desc: '동결 우려가 있는 주차장·냉동창고 등에 사용합니다. 헤드 개방 시 압축공기가 먼저 배출(엑셀러레이터 가속)된 후 클래퍼가 열려 살수됩니다.',
-        simSteps: [
-          '화재 열기 상승 → 동결방지구역의 폐쇄형 스프링클러헤드 감열체 파손',
-          '2차측 배관 내 압축공기 급속 배기 (엑셀러레이터/익스호스터 보조 작동)',
-          '2차측 공기압 저하로 드라이밸브 차압 붕괴 → 클래퍼 개방 및 2차측 유수 유입',
-          '유수검지장치 압력스위치(PS) 작동 → 주펌프 자동 기동 (컴프레서 정지)',
-          '방재실 수신기 화재표시 및 음향경보장치·비상방송 연동 경보',
-          '배관 내 잔류 공기 배출 완료 후 개방된 스프링클러헤드를 통해 본격 살수!'
-        ]
-      },
-      NEGATIVE: {
-        title: '④ 부압식 유수검지장치 (진공감시형)',
-        chamberState: '1차측: 가압수 / 2차측: 부압수(대기압 이하 진공)',
-        desc: '2차측 배관에 물을 채우되 진공펌프로 부압(진공 상태)을 유지합니다. 배관 파손 시에도 물이 새지 않고 공기만 유입되어 수손 피해를 원천 차단합니다.',
-        simSteps: [
-          '화재 발생 → 감지기 작동 또는 폐쇄형 스프링클러헤드 감열체 파손',
-          '감지기 신호 및 2차측 부압(진공) 해제 감지 → 부압식 유수검지장치 클래퍼 개방',
-          '1차측 가압수가 부압 상태의 2차측 배관을 순간적으로 정압(+압력)으로 전환',
-          '압력스위치(PS) 작동 → 감시제어반 주펌프 기동 (진공펌프 정지)',
-          '방재실 수신기 화재경보 발령 및 연동 제어 설비 일제 작동',
-          '개방된 스프링클러헤드 선단에서 정격 방수압력으로 화재 진압 살수!'
-        ]
-      },
-      DELUGE: {
-        title: '⑤ 일제살수식 유수검지장치 (델류지밸브)',
-        chamberState: '1차측: 가압수 / 2차측: 대기압 (개방형 헤드)',
-        desc: '감열체가 없는 개방형 헤드를 사용하며, 화재감지기 또는 수동기동밸브 작동 시 방수구역 내 모든 헤드에서 동시에 일제 방수됩니다(무대부·특수가연물 등).',
-        simSteps: [
-          '화재 발생 → 감지기 작동 또는 방호구역 내 수동기동밸브 개방 조작!',
-          '델류지밸브(일제개방밸브)의 가압실 압력 배수 → 클래퍼 즉시 완전 개방',
-          '1차측 가압수가 2차측 배관을 통해 방호구역 전체 배관으로 급속 유입',
-          '압력스위치(PS) 작동 → 감시제어반 주펌프 즉시 기동 및 연속 가압',
-          '방재실 수신기 화재경보 및 방화셔터·제연설비 등 연동 설비 기동',
-          '감열체가 없는 모든 개방형 헤드에서 방호구역 전체로 일제 살수 분사!'
-        ]
-      }
-    };
+<div class="progress-strip">
+  <div><strong>📚 전체 암기 진도:</strong> <span id="progText">0 / 0 완료 (0%)</span></div>
+  <div class="prog-bar-wrap"><div class="prog-bar-fill" id="progFill"></div></div>
+  <div style="display:flex; gap:5px; flex-wrap:wrap;">
+    <button class="btn" onclick="energizeAllVisible()">⚡ 일괄 통전</button>
+    <button class="btn" onclick="resetContacts()">🔄 접점 리셋</button>
+    <button class="btn" onclick="exportProgress()">💾 진도 백업</button>
+    <button class="btn" onclick="document.getElementById('importFile').click()">📂 진도 복원</button>
+    <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importProgress(event)">
+    <button class="btn" onclick="resetProgress()">🧹 초기화</button>
+  </div>
+</div>
 
-    // =========================================================================
-    // 2. 14개 핵심 부품별 4단계 법령·기준 데이터베이스 (빈칸 암기 마크업 {{정답}} 포함)
-    // =========================================================================
-    const PARTS_DB = {
-      main_tank: {
-        title: '지하수조 (주수원) & 흡입측 배관·밸브',
-        zone: '1구간 · 수원 및 흡입측',
-        codeRef: 'NFPC 103 제4조 / NFTC 103 2.1 / 시행령 별표 4',
-        lawLevel: '소방시설 설치 및 관리에 관한 법률 시행령 [별표 4] 제1호 라목: 특정소방대상물의 층수·용도·바닥면적에 따라 스프링클러설비 설치 의무가 부여되며, 전용 수원을 확보해야 합니다.',
-        nfpc: 'NFPC 103 제4조(수원): 스프링클러설비의 수원은 그 저수량이 특정소방대상물의 용도 및 층수에 따른 기준개수에 {{1.6㎥}}를 곱한 양 이상이 되도록 하여야 한다.',
-        nftc: `• 폐쇄형 헤드 저수량 산정식: <span class="math-var">Q</span> = <span class="math-var">N</span> × {{1.6}} ㎥ 이상 (단, <span class="math-var">N</span>은 기준개수)<br>
-               • 기준개수(<span class="math-var">N</span>) 핵심 표 (지하층 제외 10층 이하 기준):<br>
-                 - 근린생활·판매·운수·복합건축물(판매포함): {{30}}개 / 그 밖의 것: 20개<br>
-                 - 공장·창고(특수가연물 저장·취급): {{30}}개 / 그 밖의 것: 20개<br>
-                 - 지하층 제외 층수가 {{11}}층 이상, 지하가, 지하역사: 전 층 {{30}}개<br>
-                 - 아파트·그 밖의 것(부착높이 8m 미만): {{10}}개 (8m 이상은 20개)<br>
-               • 개방형 헤드: 최대 방수구역 헤드 수 {{30}}개 이하일 때 설치헤드수 × 1.6㎥, 초과 시 {{수리계산}} 적용<br>
-               • 수조 설치 기준: 동결방지조치, 수위계, 배수관, 맨홀(지름 {{60cm}} 이상), "스프링클러설비용 수조" 표지 설치`,
-        examTip: '★ 2차 실기 암기 포인트: ① 펌프보다 수원이 낮은 경우 흡입측에 {{후드밸브}} 및 스트레이너를 설치하고, 펌프보다 수원이 높은 경우 흡입측에 {{연성계}}(또는 진공계)를 설치합니다. ② 흡입측 개폐밸브는 개폐여부를 외부에서 확인할 수 있는 {{개폐표시형밸브}}(OS&Y)를 설치하고 템퍼스위치를 부착합니다.'
-      },
-      roof_tank: {
-        title: '옥상수조 (고가수조) 및 설치 면제조건 6가지',
-        zone: '1구간 · 수원 및 흡입측',
-        codeRef: 'NFPC 103 제4조 제3항 / NFTC 103 2.1.3',
-        lawLevel: '소방시설 설치 및 관리에 관한 법률 제12조(화재안전기준 준수 의무): 정전 또는 주펌프 고장 시 초기 소화수 확보를 위해 옥상수조 설치를 의무화하고 있습니다.',
-        nfpc: 'NFPC 103 제4조 제3항: 스프링클러설비의 수원은 유효수량의 {{3분의 1}} 이상을 옥상(스프링클러설비가 설치된 건축물의 최상층에 설치된 헤드보다 높은 위치)에 설치하여야 한다.',
-        nftc: `• 옥상수조 용량: 전체 유효수량의 {{1/3}} 이상 (단, 다른 설비와 겸용 시 각 설비 유효수량 1/3 이상 합산)<br>
-               • <strong>옥상수조 설치 면제조건 6가지 (실기 단골 서술형)</strong>:<br>
-                 1. {{지하층}}만 있는 건축물<br>
-                 2. {{고가수조}}를 가압송수장치로 설치한 경우<br>
-                 3. 수원이 건축물의 최상층 헤드보다 {{높은 위치}}에 설치된 경우<br>
-                 4. 건축물의 높이가 지표면으로부터 {{10m}} 이하인 경우<br>
-                 5. 주펌프와 동등 이상의 성능이 있는 {{별도의 펌프}}로서 내연기관의 기동과 연동되거나 비상전원을 연결하여 설치한 경우<br>
-                 6. {{가압수조}}를 가압송수장치로 설치한 경우`,
-        examTip: '★ 두문자 암기법: <strong>"지·고·높·10·별·가"</strong> (지하층만, 고가수조, 최상층보다 높은 수원, 10m 이하, 별도 펌프, 가압수조). 답안 작성 시 6가지를 정확히 서술하는 문제가 빈출됩니다.'
-      },
-      priming_tank: {
-        title: '물올림장치 (Priming Tank)',
-        zone: '1구간 · 수원 및 흡입측',
-        codeRef: 'NFPC 103 제5조 제1항 제10호 / NFTC 103 2.2.1.10',
-        lawLevel: '소방시설 설치 및 관리에 관한 법률 시행규칙: 펌프가 수원보다 높은 위치에 있을 때 흡입배관 내 공기를 제거하여 공동현상(Cavitation)과 공회전을 방지합니다.',
-        nfpc: 'NFPC 103 제5조: 가압송수장치의 펌프가 수원보다 높은 위치에 설치된 경우에는 유효수량 {{100L}} 이상의 물올림장치를 설치하여야 한다.',
-        nftc: `• 설치 대상: 펌프의 위치가 수원보다 {{높은}} 경우 (흡입양정이 발생하는 경우)<br>
-               • 물올림수조 유효수량: {{100L}} 이상<br>
-               • 급수배관 구경: 구경 {{15mm}} 이상의 급수배관에 의하여 당해 수조에 물이 계속 보급되도록 할 것 (볼탭/정수위밸브)<br>
-               • 물올림관 구경: 물올림수조와 펌프를 연결하는 배관 구경 {{25mm}} 이상 (체크밸브 및 개폐밸브 설치)<br>
-               • 감수경보장치: 물올림수조의 물이 감소할 때 감시제어반으로 경보를 발하는 {{감수경보장치}}(플로트스위치 등) 설치`,
-        examTip: '★ 수치 3종 세트 완벽 암기: 유효수량 <strong>{{100L}}</strong> 이상 / 급수배관 <strong>{{15mm}}</strong> 이상 / 물올림관 <strong>{{25mm}}</strong> 이상! 구경 15mm와 25mm를 서로 바꾸어 출제하는 함정에 주의하세요.'
-      },
-      main_pump: {
-        title: '가압송수장치 (주펌프) 토출압력 및 토출량',
-        zone: '2구간 · 가압송수장치',
-        codeRef: 'NFPC 103 제5조 / NFTC 103 2.2.1',
-        lawLevel: '소방시설 설치 및 관리에 관한 법률 제37조(소방용품의 형식승인 등): 소방용 펌프는 성능인증 및 제품검사에 합격한 제품을 설치해야 합니다.',
-        nfpc: 'NFPC 103 제5조: 가압송수장치는 하나의 스프링클러헤드 선단에 {{0.1MPa}} 이상 {{1.2MPa}} 이하의 방수압력이 될 수 있는 크기의 것을 설치하여야 한다.',
-        nftc: `• 정격토출압력(<span class="math-var">P</span>): 헤드 선단 {{0.1MPa}} 이상 {{1.2MPa}} 이하 (초과 시 감압밸브 등 감압조치)<br>
-               • 정격토출량(<span class="math-var">Q</span>): 0.1MPa 방수압력 기준 {{80L/min}} 이상의 방수성능을 가진 기준개수의 모든 헤드로부터의 방수량을 충족시키는 양 이상 (단, 속도수두는 계산에 미포함)<br>
-               • 펌프 설치 기준: 전용실 설치(방화구획), 기초 높이 10cm 이상, 토출측에는 압력계·체크밸브·개폐표시형밸브 순으로 설치<br>
-               • 고가수조 자연낙차(<span class="math-var">H</span>): <span class="math-var">H</span> = <span class="math-var">h</span><sub>1</sub> + {{10}} [m] (<span class="math-var">h</span><sub>1</sub>: 배관 마찰손실수두)<br>
-               • 압력수조 압력(<span class="math-var">P</span>): <span class="math-var">P</span> = <span class="math-var">p</span><sub>1</sub> + <span class="math-var">p</span><sub>2</sub> + {{0.1}} [MPa]`,
-        examTip: '★ 토출량 계산 주의: 수리계산을 하지 않는 경우 정격토출량은 단순히 <span class="math-var">N</span> × 80 L/min 이상이며, 토출측 체크밸브는 펌프와 개폐표시형밸브 {{사이}}에 설치합니다.'
-      },
-      jockey_pump: {
-        title: '충압펌프 (Jockey Pump) 설치 및 세팅 기준',
-        zone: '2구간 · 가압송수장치',
-        codeRef: 'NFTC 103 2.2.1.5 / 2.2.1.6',
-        lawLevel: '화재안전기술기준(NFTC 103): 배관 내 누수로 인한 미세 압력 저하 시 주펌프가 빈번하게 기동(헌팅)되는 것을 방지하고 상시 배관 압력을 유지합니다.',
-        nfpc: 'NFPC 103 제5조: 배관 내 압력손실에 따른 주펌프의 빈번한 기동을 방지하기 위하여 충압펌프를 설치하여야 한다.',
-        nftc: `• 설치 대상: 내연기관 기동방식 및 고가수조·가압수조 방식을 제외한 전동기 펌프 방식<br>
-               • 충압펌프 정격토출압력: 그 설비의 최고위 호스접결구 또는 헤드의 자연압보다 적어도 {{0.2MPa}} 더 크도록 하거나, 가압송수장치의 정격토출압력과 같게 할 것<br>
-               • 충압펌프 정격토출량: 정상적인 누설량보다 적어서는 아니 되며, 스프링클러헤드가 개방될 경우 주펌프가 지체 없이 기동될 수 있는 유량({{60L/min}} 이상 권장)으로 할 것<br>
-               • 토출측 배관: 충압펌프 토출측에도 체크밸브 및 개폐표시형밸브를 설치하여 주펌프 토출배관 체크밸브 {{2차측}}에 연결`,
-        examTip: '★ 점검 불량 판정(헌팅 현상): 배관 누수, 체크밸브 역류, 압력챔버 공기 소실(수격현상) 시 충압펌프가 수 초 간격으로 기동·정지를 반복하는 <strong>헌팅(Hunting)</strong>이 발생합니다.'
-      },
-      pressure_chamber: {
-        title: '기동용수압개폐장치 (압력챔버) 기동·정지 압력 세팅',
-        zone: '2구간 · 가압송수장치',
-        codeRef: 'NFTC 103 2.2.1.5',
-        lawLevel: '화재안전기술기준(NFTC 103): 배관 압력 변동을 감지하여 압력스위치(PS)를 통해 주펌프와 충압펌프를 자동으로 기동·정지시키는 핵심 제어 장치입니다.',
-        nfpc: 'NFPC 103 제5조: 기동용수압개폐장치는 압력챔버 또는 기동용압력스위치 등을 사용하여 펌프가 자동 기동되도록 설치하여야 한다.',
-        nftc: `• 압력챔버 용적: {{100L}} 이상 (상부에 압력계 및 압력스위치, 하부에 배수밸브 설치)<br>
-               • <strong>압력스위치 기동·정지 압력 세팅 공식 (실기 계산 필수)</strong>:<br>
-                 - 주펌프 정지점: 주펌프 {{체절압력}} (또는 최고사용압력)<br>
-                 - 충압펌프 정지점: 주펌프 정지점과 동일 (또는 약간 낮게 설정)<br>
-                 - 충압펌프 기동점: 최고위 헤드 위치의 자연낙차압력 + {{0.15}} ~ {{0.2}} MPa<br>
-                 - 주펌프 기동점: 최고위 헤드 위치의 자연낙차압력 + {{0.1}} ~ {{0.15}} MPa (충압펌프 기동점보다 {{0.05MPa}} 낮게 설정)<br>
-               • 주펌프 정지 원칙: 주펌프는 압력스위치에 의해 자동 기동되나, 정지는 감시제어반에서 {{수동정지}}하도록 할 것`,
-        examTip: '★ 실기 계산 핵심: 압력 세팅 순서(높은 압력 → 낮은 압력)는 <strong>"주정(체절압) ≥ 충정 > 충기 > 주기"</strong> 순입니다! 절대 주펌프 기동점이 충압펌프 기동점보다 높으면 안 됩니다.'
-      },
-      perf_test_pipe: {
-        title: '성능시험배관 및 순환배관 (릴리프밸브)',
-        zone: '2구간 · 가압송수장치',
-        codeRef: 'NFPC 103 제5조 제1항 제7호·제8호 / NFTC 103 2.2.1.7·2.2.1.8',
-        lawLevel: '소방시설 설치 및 관리에 관한 법률 시행규칙 [별표 4] 자체점검(작동점검·종합점검): 펌프의 체절운전·정격운전·과부하운전 성능을 정기적으로 검증하는 필수 배관입니다.',
-        nfpc: 'NFPC 103 제5조: 가압송수장치에는 정격토출량의 150%로 운전할 수 있는 성능시험배관과 체절운전 시 수온 상승을 방지하기 위한 순환배관을 설치하여야 한다.',
-        nftc: `• <strong>펌프 P-Q 성능시험 기준 3대 포인트</strong>:<br>
-                 1. 체절운전(유량 0%) 시: 정격토출압력의 {{140%}}를 초과하지 않을 것<br>
-                 2. 정격운전(유량 100%) 시: 정격토출압력({{100%}}) 이상 유지할 것<br>
-                 3. 과부하운전(유량 {{150%}}) 시: 정격토출압력의 {{65%}} 이상이 될 것<br>
-               • 성능시험배관 구조: 펌프 토출측 개폐밸브 {{이전}}에서 분기 → 개폐밸브 → 유량계 → 유량조절밸브 순으로 설치 (유량계 전후 직관부 확보)<br>
-               • 순환배관 구조: 펌프 토출측 체크밸브 {{이전}}에서 분기하여 구경 {{20mm}} 이상 배관에 {{체절압력 미만}}에서 개방되는 릴리프밸브 설치`,
-        examTip: '★ 분기 위치 암기: <strong>순환배관</strong>은 체크밸브 <strong>이전</strong>에서 분기하고, <strong>성능시험배관</strong>은 개폐표시형밸브 <strong>이전</strong>에서 분기합니다!'
-      },
-      alarm_valve: {
-        title: '유수검지장치 (습식·건식·준비작동식·부압식·일제살수식)',
-        zone: '3구간 · 유수검지장치실',
-        codeRef: 'NFPC 103 제6조·제9조 / NFTC 103 2.4·2.7',
-        lawLevel: '소방시설 설치 및 관리에 관한 법률 시행령 및 NFPC 103: 방호구역 내 유수 현상을 검지하여 수신기에 화재 신호를 보내고, 배관 2차측의 가압수·압축공기·부압을 제어합니다.',
-        nfpc: 'NFPC 103 제9조: 스프링클러설비에는 방호구역마다 유수검지장치를 설치하여야 하며, 하나의 방호구역 바닥면적은 {{3,000㎡}}를 초과하지 아니하여야 한다.',
-        nftc: `• 방호구역 면적 기준: {{3,000㎡}} 이하 (단, 격자형 배관 채택 시 수리계산 충족 조건으로 {{3,700㎡}} 이하)<br>
-               • 층수 제한: 하나의 방호구역은 {{2개 층}}에 미치지 아니할 것 (예외: 1개 층 헤드 수 {{10개}} 이하 또는 복층형 공동주택 3개 층 이내)<br>
-               • 유수검지장치실 설치 높이: 바닥으로부터 {{0.8m}} 이상 {{1.5m}} 이하 위치에 설치, "유수검지장치실" 표지 및 조명설비 설치<br>
-               • 클래퍼 제어(준비작동식·일제살수식): 1차측 및 2차측 개폐표시형밸브(템퍼스위치 부착), 세팅배관, 수동기동밸브, 배수밸브(드레인) 구비`,
-        examTip: '★ 5가지 방식 비교 핵심: 습식(1·2차 가압수), 건식(2차 압축공기·동결방지), 준비작동식(2차 대기압·교차회로 감지기 연동), 부압식(2차 부압수·진공유지), 일제살수식(개방형 헤드·감지기/수동기동밸브 일제 개방).'
-      },
-      svp_panel: {
-        title: '슈퍼비조리판넬 (SVP) 및 교차회로 감지기 연동',
-        zone: '3구간 · 유수검지장치실 / 전기 연동',
-        codeRef: 'NFTC 103 2.7 / NFTC 203 (자동화재탐지설비)',
-        lawLevel: '화재안전기술기준(NFTC 103 & 203): 준비작동식 및 일제살수식 유수검지장치의 솔레노이드밸브를 현장 직근에서 제어·감시하고, 교차회로 방식 감지기와 연동합니다.',
-        nfpc: 'NFPC 103 제9조: 준비작동식 유수검지장치를 작동시키는 화재감지기는 교차회로방식으로 설치하여야 한다.',
-        nftc: `• <strong>교차회로방식 예외 대상 (감지기 1회로 단독 작동 허용 장소 5곳 - 실기 빈출)</strong>:<br>
-                 1. {{광전식 공기흡입형}} 감지기<br>
-                 2. {{아날로그식}} 감지기<br>
-                 3. {{다신호식}} 감지기<br>
-                 4. {{축적형}} 감지기<br>
-                 5. {{분포형}} 감지기<br>
-               • SVP 주요 기능: 감지기 A·B회로 작동 표시, 솔레노이드밸브 기동 및 단선 감시, 현장 수동기동스위치, 밸브주의(템퍼스위치) 표시등<br>
-               • 솔레노이드밸브 작동 후 2차측에 물이 충수되면 유수검지장치 압력스위치(PS)가 작동하여 수신기에 화재 신호를 최종 송출합니다.`,
-        examTip: '★ 교차회로 예외 감지기 5가지 암기 두문자: <strong>"광·아·다·축·분"</strong> (광전식 공기흡입형, 아날로그식, 다신호식, 축적형, 분포형 감지기).'
-      },
-      branch_pipes: {
-        title: '교차배관 & 가지배관 배열 및 구경 제한',
-        zone: '4구간 · 배관·헤드·말단시험',
-        codeRef: 'NFPC 103 제8조 / NFTC 103 2.5',
-        lawLevel: '화재안전성능기준(NFPC 103 제8조): 소화수가 모든 헤드에 균등한 압력과 유량으로 공급되도록 배관의 재질, 배열 방식, 분기 개수를 엄격히 제한합니다.',
-        nfpc: 'NFPC 103 제8조: 가지배관의 배열은 토너먼트방식이 아니어야 하며, 교차배관에서 분기되는 한쪽 가지배관에 설치되는 헤드의 개수는 {{8개}} 이하로 하여야 한다.',
-        nftc: `• 배관 재질 구분: 사용압력 {{1.2MPa}} 미만(배관용 탄소강관 SPP, 스테인리스 강관, 동관-습식한정) / {{1.2MPa}} 이상(압력배관용 탄소강관 SPPS 등)<br>
-               • 교차배관 최소 구경: {{40mm}} 이상 (단, 패들형 유수검지장치 사용 시 교차배관 구경과 동일하게 설치 가능)<br>
-               • 가지배관 헤드 수 제한: 한쪽 가지배관당 {{8개}} 이하 (예외: 격자형 배관방식 적용 등으로 수리학적 타당성이 인정되는 경우)<br>
-               • 청소구 설치: 교차배관의 끝에는 구경 {{40mm}} 이상의 개폐밸브(청소구)를 설치하여 배관 내 이물질 배출<br>
-               • 습식 외 배관(건식·준비작동식) 기울기: 가지배관 {{1/500}} 이상, 교차배관 {{1/250}} 이상의 배수 기울기(구배) 확보`,
-        examTip: '★ 기울기 수치 암기: 건식·준비작동식은 배관 내 잔류수를 완전히 빼내야 동파를 막을 수 있으므로 <strong>가지배관 1/500 이상, 교차배관 1/250 이상</strong> 기울기를 줍니다.'
-      },
-      sprinkler_heads: {
-        title: '스프링클러 헤드 배치, 수평거리 및 조기반응형 의무 대상',
-        zone: '4구간 · 배관·헤드·말단시험',
-        codeRef: 'NFPC 103 제10조 / NFTC 103 2.6',
-        lawLevel: '화재안전성능기준(NFPC 103 제10조): 화재 초기 빠른 감열과 사각지대 없는 살수 분포를 위해 헤드의 수평거리, 반사판 이격거리, 조기반응형 헤드 설치 대상을 규정합니다.',
-        nfpc: 'NFPC 103 제10조: 스프링클러헤드는 특정소방대상물의 천장·반자·천장과 반자사이·덕트·선반 기타 이와 유사한 부분에 설치하여야 한다.',
-        nftc: `• <strong>헤드 배치 수평거리 (<span class="math-var">r</span>) 기준 (정방형·장방형 배치)</strong>:<br>
-                 - 무대부 및 특수가연물 저장·취급 장소: {{1.7m}} 이하<br>
-                 - 그 밖의 건축물 (비내화구조): {{2.1m}} 이하<br>
-                 - 그 밖의 건축물 ({{내화구조}}): {{2.3m}} 이하 (랙크식 창고는 2.5m 이하)<br>
-               • <strong>조기반응형 스프링클러헤드 의무 설치 장소 (실기 필수 암기)</strong>:<br>
-                 1. {{공동주택}}·노유자시설의 거실<br>
-                 2. {{오피스텔}}·숙박시설의 침실<br>
-                 3. {{병원}}·의원의 입원실<br>
-                 4. {{전기차}} 충전구역 (지하주차장 등)<br>
-               • 반사판(디플렉터) 설치 기준: 천장·반자로부터 {{0.3m}} 이내 (내화구조는 0.45m 이내), 하방 살수장애 공간 {{0.45m}} 이상 확보`,
-        examTip: '★ 헤드 설치 제외 장소 대표 예시: 계단실·경사로·승강기 승강로, 화장실·목욕실, 통신기기실·전자기기실(물 분무 시 치명적 손상 우려), 발전실·변전실·변압기실, 빙상장·수영장 관람석 등.'
-      },
-      end_test_valve: {
-        title: '말단시험장치 (Inspector’s Test Connection)',
-        zone: '4구간 · 배관·헤드·말단시험',
-        codeRef: 'NFPC 103 제8조 제12항 / NFTC 103 2.5.12',
-        lawLevel: '화재안전성능기준(NFPC 103 제8조): 유수검지장치에서 수리학적으로 가장 먼 위치에서 실제 헤드 1개가 개방된 것과 동일한 조건을 모의 시험하기 위한 장치입니다.',
-        nfpc: 'NFPC 103 제8조: 유수검지장치의 작동과 방수압력을 시험하기 위하여 유수검지장치마다 말단시험장치를 설치하여야 한다.',
-        nftc: `• 설치 위치: 유수검지장치에서 가장 먼 거리에 위치한 가지배관의 끝 (습식·부압식은 유수검지장치 2차측 배관에 설치 가능)<br>
-               • 배관 구경: 구경 {{25mm}} 이상<br>
-               • 구성 부품 순서: 배관 끝에 개폐밸브 + 개방형 스프링클러헤드(또는 헤드와 동등한 방수성능을 가진 {{오리피스}}) + {{압력계}} 설치<br>
-               • 시험 목적: 말단 개방 시 압력계가 {{0.1MPa}} 이상 유지되는지 확인하고, 유수검지장치(PS) 작동 및 수신기 화재표시등·음향경보 연동을 검증합니다.`,
-        examTip: '★ 비교 암기: <strong>성능시험배관</strong>은 펌프실에 설치하여 펌프의 0%·100%·150% 유량-압력을 시험하고, <strong>말단시험장치</strong>는 방호구역 최말단에 설치하여 말단 방수압력(0.1MPa 이상)과 유수검지장치 작동을 시험합니다.'
-      },
-      mcc_panel: {
-        title: '감시제어반 & 동력제어반 (MCC) 구조 및 감시 기능',
-        zone: '5구간 · 전기 제어·감시 계통도',
-        codeRef: 'NFPC 103 제12조 / NFTC 103 2.9',
-        lawLevel: '화재안전성능기준(NFPC 103 제12조): 펌프의 자동·수동 기동 및 수조 저수위, 개폐밸브의 개폐 상태(템퍼스위치)를 상시 감시·제어하는 핵심 전기 설비입니다.',
-        nfpc: 'NFPC 103 제12조: 스프링클러설비에는 그 설비의 작동여부를 감시하고 제어할 수 있는 감시제어반과 동력제어반을 설치하여야 한다.',
-        nftc: `• <strong>감시제어반 주요 표시등 및 감시 기능</strong>:<br>
-                 1. 각 펌프의 작동 여부를 확인할 수 있는 표시등 및 음향경보장치<br>
-                 2. 펌프를 자동 및 수동으로 작동시키거나 중단시킬 수 있는 스위치<br>
-                 3. 비상전원이 설치된 경우 상용전원 및 비상전원의 공급 여부를 확인할 수 있는 표시등<br>
-                 4. 수조의 물이 저수위로 될 때 표시등 및 음향으로 경보할 수 있는 장치<br>
-                 5. 각 확인회로(수조 저수위, 템퍼스위치 등)마다 {{도통시험}} 및 {{작동시험}}을 할 수 있는 스위치<br>
-               • 전용실 설치 면제 예외: 수신기에 감시제어반 기능이 내장된 경우, 내연기관 펌프 사용 시, 제어반 외함이 {{1.5mm}} 이상 강판(스테인리스 1.0mm↑)으로 방수·내열 조치된 경우 등`,
-        examTip: '★ 템퍼스위치(Tamper Switch) 핵심: 수원·펌프·유수검지장치의 모든 개폐표시형밸브에는 밸브가 잠길 경우 감시제어반 및 수신기에 경보를 발하는 <strong>템퍼스위치</strong>를 설치해야 하며, 밸브가 <strong>2바퀴 반(또는 1/5 이상)</strong> 잠기기 전에 신호를 발해야 합니다.'
-      },
-      fire_receiver: {
-        title: '방재실 수신기 (R형/P형) & 타 소방시설 인터록 연동 로직',
-        zone: '5구간 · 전기 제어·감시 계통도',
-        codeRef: 'NFPC 103 제11조·제12조 / NFTC 203 / NFTC 501',
-        lawLevel: '소방시설 설치 및 관리에 관한 법률 제12조: 스프링클러설비 작동 시 경보설비(자동화재탐지·비상방송) 및 피난·소화활동설비(제연설비·방화셔터)와 유기적으로 연동되어야 합니다.',
-        nfpc: 'NFPC 103 제11조: 스프링클러설비의 음향장치는 자동화재탐지설비의 음향장치와 연동하여 작동할 수 있도록 하여야 한다.',
-        nftc: `• <strong>스프링클러설비 전체 기계·전기 연동 시퀀스 요약</strong>:<br>
-                 1. [화재 감지] 감지기 작동(준비작동식·일제살수식) 또는 헤드 개방(습식·건식)<br>
-                 2. [유수 검지] 유수검지장치 압력스위치(PS) 작동 → 방재실 수신기 {{지구표시등}} 점등 및 주경종·지구경종·비상방송설비 기동<br>
-                 3. [펌프 기동] 배관 압력 저하 → 압력챔버 압력스위치(PS) 접점 폐쇄 → 동력제어반(MCC) 전자접촉기 여자 → {{주펌프}} 자동 기동<br>
-                 4. [타설비 연동] 화재 층 및 직상층 {{제연설비}}(NFTC 501) 급배기 댐퍼 개방 및 제연팬 기동, 방화셔터 폐쇄, 승강기 피난층 귀환<br>
-                 5. [복구 절차] 화재 진압 완료 후 감시제어반에서 주펌프 {{수동 정지}} → 유수검지장치 복구 → 수신기 복구`,
-        examTip: '★ 종합정밀점검 단골 질문: "스프링클러 유수검지장치 압력스위치(PS) 작동 시 주펌프가 기동되는가?" → 원칙적으로 <strong>주펌프는 배관 압력 저하(기동용수압개폐장치 PS)에 의해 기동</strong>되며, 유수검지장치 PS는 <strong>수신기 화재표시 및 경보 연동</strong> 역할을 수행합니다(단, 현장 설계에 따라 병렬 기동 회로를 구성하기도 함).'
-      },
-      emergency_power: {
-        title: '비상전원 설비 (자가발전설비 · 축전지 · 전기저장장치)',
-        zone: '5구간 · 전기 제어·감시 계통도',
-        codeRef: 'NFPC 103 제13조 / NFTC 103 2.10',
-        lawLevel: '화재안전성능기준(NFPC 103 제13조): 화재로 인해 상용전원이 차단되더라도 스프링클러설비가 유효하게 작동할 수 있도록 비상전원을 의무화합니다.',
-        nfpc: 'NFPC 103 제13조: 스프링클러설비에는 자가발전설비, 축전지설비 또는 전기저장장치를 기준으로 한 비상전원을 설치하여야 한다.',
-        nftc: `• <strong>비상전원 작동 시간 기준 (층수별 차등 - 초빈출 암기)</strong>:<br>
-                 - 일반 특정소방대상물 (29층 이하): {{20분}} 이상<br>
-                 - 지하층 제외 층수가 {{30층}} 이상 {{49층}} 이하: {{40분}} 이상<br>
-                 - 지하층 제외 층수가 {{50층}} 이상: {{60분}} 이상<br>
-               • 비상전원 설치 면제 조건: ① 둘 이상의 변전소에서 전력을 동시 공급받는 경우, ② 하나의 변전소에서 전력 공급이 중단되는 때 자동으로 다른 변전소로부터 전력을 공급받도록 상용전원을 설치한 경우, ③ 가압수조 방식을 설치한 경우<br>
-               • 배선 기준: 비상전원으로부터 동력제어반 및 가압송수장치에 이르는 전원회로 배선은 {{내화배선}}으로 시공할 것`,
-        examTip: '★ 층수별 비상전원 시간 암기: <strong>20분(일반) → 40분(30층 이상) → 60분(50층 이상)</strong>. 옥내소화전설비와 동일한 기준이므로 한 번 암기하면 두 설비 모두 적용됩니다!'
-      }
-    };
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main id="mainArea"></main>
+</div>
 
-    // =========================================================================
-    // 3. 2차 실기 시나리오 판정 문제 은행 (실기 시나리오 모드용)
-    // =========================================================================
-    const PRACTICAL_QUIZZES = [
+<script>
+const MODULES = [
+  { id: 'study_num', group: 'study', name: '⏱ 수치·규격 총정리 매트릭스', desc: '1회차 5설비 모든 거리·높이·압력·구경·용량·온도 수치 통합 비교표' },
+  { id: 'study_trap', group: 'study', name: '⚡ 두문자 & 함정 비교노트', desc: '0.5~1m/1.5m/0.8~1.5m 높이 비교, 배관재질·겸용·감소·설치제외 함정' },
+  { id: 'quiz', group: 'study', name: '📝 실전 암기 퀴즈 (25문항)', desc: '설비별 필터링 + 오답 집중 복습 지원' },
+  { id: 'sim', group: 'study', name: '🎛️ 공학 계산 시뮬레이터 (3종)', desc: '소화기구 능력단위·감소 / 소화수조 수량·채수구·양수량 / 연결송수관 펌프·토출량' },
+
+  // ==================== 1. 소화기구 및 자동소화장치 ====================
+  {
+    id: 's101_a', group: 'seq', cat: '1회차: 소화기구 · 용수 · 연결수계',
+    name: '1. [소화기구] 적응성 · 능력단위 · 부속용도 · 감소',
+    desc: '화재별 적응성(A·B·C·K·D), 능력단위 면적, 부속용도 7종 추가, 소형·대형 감소 기준',
+    rungs: [
       {
-        id: 'Q1',
-        title: '시나리오 01 · 복합건축물(판매시설 포함) 수원 및 방호구역 판정',
-        scenario: '지하 2층, 지상 12층 규모의 내화구조 복합건축물(지상 1~3층 판매시설, 4~12층 업무시설)이 있다. 1개 층 바닥면적은 3,400㎡이며, 일반 배관방식(가지배관 방식)으로 폐쇄형 스프링클러설비를 설치하고자 한다. (타 설비 겸용 없음)',
-        questions: [
-          {
-            label: '1) 저수량 산정을 위한 스프링클러헤드 기준개수(N)는?',
-            options: ['10개', '20개', '30개'],
-            answer: '30개',
-            explain: '지하층을 제외한 층수가 11층 이상(12층)이며 판매시설이 포함된 복합건축물이므로 기준개수 N = 30개를 적용합니다.'
-          },
-          {
-            label: '2) 지하수조의 최소 유효저수량(Q)은 몇 ㎥ 이상인가?',
-            options: ['32.0 ㎥', '48.0 ㎥', '64.0 ㎥'],
-            answer: '48.0 ㎥',
-            explain: 'Q = N × 1.6 ㎥ = 30개 × 1.6 ㎥ = 48.0 ㎥ 이상입니다.'
-          },
-          {
-            label: '3) 1개 층(바닥면적 3,400㎡)에 설치해야 할 유수검지장치의 최소 개수는?',
-            options: ['1개소', '2개소', '3개소'],
-            answer: '2개소',
-            explain: '일반 배관방식에서 하나의 방호구역 바닥면적은 3,000㎡ 이하이어야 하므로, 3,400㎡는 2개의 방호구역(유수검지장치 2개소)으로 분할해야 합니다.'
-          },
-          {
-            label: '4) 지상 12층 건물의 비상전원 최소 유효 작동시간은?',
-            options: ['20분 이상', '40분 이상', '60분 이상'],
-            answer: '20분 이상',
-            explain: '지하층 제외 층수가 30층 미만이므로 일반 기준인 20분 이상을 적용합니다(30~49층: 40분, 50층 이상: 60분).'
-          }
+        title: '화재종류(A·B·C·K·D) · 소화기 구분 · 간이소화용구 능력단위', tag: '정의·적응성',
+        tip: '💡 {{할론}}은 A급 적응성 없음(B·C만)! | {{D급(금속화재)}}=마른모래·팽창질석·팽창진주암 등 | 대형소화기={{A급 10단위}}↑·{{B급 20단위}}↑!',
+        steps: [
+          { type: 'or', items: [
+            '{{A급(일반·재 남음)}}: CO₂·할론 제외 전부 | {{B급(유류·재 안남음)}}: 전부 적응 | {{C급(전기)}}: CO₂·할론·할로겐·분말·고체에어로졸(*산알칼리·강화액·물침윤)',
+            '{{K급(주방·동식물유)}}: *인산염류·중탄산염류·산알칼리·강화액·포·물침윤·그밖 | {{D급(금속·마그네슘 등)}}: 마른모래·팽창질석·팽창진주암(*인산염류·중탄산염류·그밖)',
+            '소형(1단위↑~대형 미만) / 대형(운반대·바퀴, A급 {{10단위}}↑·B급 {{20단위}}↑) / 간이소화용구(삽 상비 마른모래 {{50L}}↑ 1포={{0.5단위}}, 팽창질석·진주암 {{80L}}↑ 1포={{0.5단위}})'
+          ]},
+          { type: 'out', text: '설치장소 화재종류에 적응성 있는 소화약제 선정' }
         ]
       },
       {
-        id: 'Q2',
-        title: '시나리오 02 · 고층 아파트(공동주택) 특수 헤드 및 옥상수조 판정',
-        scenario: '지하 1층, 지상 32층 규모의 내화구조 아파트(공동주택)에 폐쇄형 스프링클러설비를 설치한다. 주펌프는 전동기 펌프를 사용하며, 비상발전기가 연결되어 있다. 옥상에는 별도의 옥상수조가 설치되어 있지 않다.',
-        questions: [
-          {
-            label: '1) 아파트 거실에 의무적으로 설치해야 하는 스프링클러헤드의 종류는?',
-            options: ['표준반응형 헤드', '조기반응형 헤드', '개방형 헤드'],
-            answer: '조기반응형 헤드',
-            explain: '공동주택·노유자시설의 거실, 오피스텔·숙박시설의 침실, 병원 입원실, 전기차 충전구역에는 조기반응형 헤드를 의무 설치해야 합니다.'
-          },
-          {
-            label: '2) 주펌프 외에 비상전원이 연결된 별도의 예비펌프가 없을 경우, 옥상수조 면제가 가능한가?',
-            options: ['면제 가능 (비상발전기가 있으므로)', '면제 불가 (옥상수조 설치 필수)'],
-            answer: '면제 불가 (옥상수조 설치 필수)',
-            explain: '옥상수조 면제조건 5호는 "주펌프와 동등 이상의 성능이 있는 별도의 펌프로서 내연기관과 연동되거나 비상전원을 연결한 경우"이므로, 주펌프만 있고 예비펌프가 없다면 면제되지 않습니다.'
-          },
-          {
-            label: '3) 지상 32층 아파트의 비상전원 최소 유효 작동시간은 몇 분 이상인가?',
-            options: ['20분 이상', '40분 이상', '60분 이상'],
-            answer: '40분 이상',
-            explain: '지하층을 제외한 층수가 30층 이상 49층 이하이므로 비상전원은 40분 이상 작동해야 합니다.'
-          },
-          {
-            label: '4) 내화구조 아파트 천장에 헤드를 정방형 배치할 때 헤드 간 최대 수평거리는?',
-            options: ['1.7 m 이하', '2.1 m 이하', '2.3 m 이하'],
-            answer: '2.3 m 이하',
-            explain: '내화구조 건축물의 스프링클러헤드 배치 수평거리는 2.3m 이하(비내화 2.1m, 무대부·특수가연물 1.7m)입니다.'
-          }
+        title: '특정소방대상물별 능력단위 및 거실·보행거리·표지 시퀀스', tag: '능력단위·배치',
+        tip: '💡 면적 계단: 위락 {{30㎡}} | 문집(전시·동식물외)·의료·장례·문화재 {{50㎡}} | 공동·근생·전시 등 {{100㎡}} | 그외 {{200㎡}} (내화+불연·준불연·난연 시 {{2배}}!)',
+        steps: [
+          { type: 'c', text: '능력단위 1단위 기준 바닥면적: 위락 {{30㎡}} / 문화집회(전시장·동식물원 외)·의료·장례식장·문화재 {{50㎡}} / 공동주택·근생·전시장·판매·운수·노유·업무·숙박·공장·창고·항공자동차·방송·관광휴게 {{100㎡}} / 그밖 {{200㎡}} (주요구조부 내화+벽반자 불연·준불연·난연 시 {{2배}})' },
+          { type: 'a', text: '각 층 배치(2↑ 거실 구획 시 {{33㎡}}↑ 각 거실 배치) · 보행거리(소형 {{20m}}↓ / 대형 {{30m}}↓, 불연작업장 완화) · 간이소화용구 전체의 {{1/2}} 초과 금지(노유자 제외)' },
+          { type: 'out', text: '바닥높이 {{1.5m}} 이하 비치 + 축광표지(소화기·투척용; 주차장은 표지 바닥 {{1.5m}} 이상) / CO₂·할로겐 소화기구(자동확산 외) 지하·무창·밀폐 {{20㎡}} 미만 금지(유효배기구 예외)' }
+        ]
+      },
+      {
+        title: '부속용도별(7종) 추가 설치 및 소형·대형 감소 시퀀스', tag: '부속용도·감소',
+        tip: '💡 부속주방 {{25㎡}}마다 1단위({{1개↑ K급}}) & 자동확산({{10㎡↓}} 1개, {{10㎡초과}} 2개↑) | 감소제외: 11층↑ & 15개 용도({{무인변전소}}만 감소 가능)!',
+        steps: [
+          { type: 'or', items: [
+            '① 보일러·건조·세탁·대량화기 / 주방(음식·다중·호텔·기숙·노유·의료·업무·공장·장례·교육·교정군사; 의료업무공장 공동취사) / 출입곤란 변전·송전·변압·배전(불연상자 외): {{25㎡}}마다 1단위(주방 1개↑ {{K급}}) + 자동확산소화기({{10㎡}}↓ 1개 / 초과 2개↑; SP·간이SP·물분무등·상업주방설치시 생략 가능)',
+            '② 발전·변전·송전·변압·배전·통신·전자(①외; 통신전자 외 600V/750V↑): {{50㎡}}마다 적응소화기 1개↑ OR 가스·분말·고체에어로졸·캐비닛형 자동소화장치',
+            '③ 지정수량 {{1/5↑~미만}} 위험물: {{2단위}}↑ 소화기 OR 자동소화장치 | ④ 특수가연물: 기준수량↑ {{50배}}마다 1단위↑, {{500배}}↑ 대형 1개↑',
+            '⑤ 가스연료 장소: 연소기기 보행 {{10m}} 내 {{3단위}}↑ 1개↑(상업주방 외) / 저장실(300kg↓ 외) {{5단위}}↑ 2개↑ + 대형 1개↑ | ⑥ 연료외 가스제조·저장(1개월량, 50㎡↓도 2개↑): <200kg 3단위×2 / 200~300 저장 5단위×2·제조 50㎡당 5단위×1 / ≥300 저장 대형×2·제조 50㎡당 5단위×1 | ⑦ 마그네슘 합금 칩: {{D급}} 1개↑ 보행 {{20m}} 내'
+          ]},
+          { type: 'b', text: '감소(유효범위): 옥내·SP·물분무등·옥외·대형 설치 시 소형 {{2/3}}(대형 둔 경우 {{1/2}}) 감소 및 대형 면제 (단, {{11층↑}}·근생·위락·문집·운동·판매·운수·숙박·노유·의료·업무[{{무인변전소 제외}}]·방송·교육·항공자동차·관광휴게는 소형 감소 불가)' },
+          { type: 'out', text: '부속용도 추가 및 유효범위 감면 확정' }
         ]
       }
-    ];
-
-    // =========================================================================
-    // 4. 애플리케이션 상태 및 렌더링 로직
-    // =========================================================================
-    const appState = {
-      selectedPart: 'main_tank',
-      valveType: 'PREACTION',
-      studyMode: 'EXPLORE', // 'EXPLORE' | 'CLOZE' | 'QUIZ'
-      revealAllCloze: false,
-      simRunning: false,
-      simTimers: [],
-      quizIndex: 0,
-      quizAnswers: {}
-    };
-
-    function showToast(msg) {
-      const el = document.getElementById('toast');
-      document.getElementById('toastMsg').textContent = msg;
-      el.classList.remove('translate-y-20', 'opacity-0');
-      clearTimeout(window._tTimer);
-      window._tTimer = setTimeout(() => {
-        el.classList.add('translate-y-20', 'opacity-0');
-      }, 2400);
-    }
-
-    // {{정답}} 마크업을 학습 모드(탐험 vs 빈칸 암기)에 맞게 변환
-    function formatLawText(rawHtml) {
-      if (appState.studyMode !== 'CLOZE') {
-        return rawHtml.replace(/\{\{(.*?)\}\}/g, '<strong class="text-amber-300 font-bold underline decoration-amber-500/40 underline-offset-2">$1</strong>');
+    ]
+  },
+  {
+    id: 's101_b', group: 'seq', cat: '1회차: 소화기구 · 용수 · 연결수계',
+    name: '2. [소화기구] 자동소화장치(6종) · 자동확산소화기',
+    desc: '주거용·상업용 주방, 캐비닛형(교차회로), 가스·분말·고체에어로졸(표시온도 표)',
+    rungs: [
+      {
+        title: '자동확산소화기(3종) 및 주거용·상업용 주방자동소화장치 시퀀스', tag: '주방·확산',
+        tip: '💡 가스용 주방탐지부: 공기보다 가벼운 가스=천장면 {{30cm}} 이하 / 무거운 가스=바닥면 {{30cm}} 이하!',
+        steps: [
+          { type: 'or', items: [
+            '{{자동확산소화기}}(일반화재용·주방화재용·전기설비용): 방호대상물에 유효 방출·견고 고정',
+            '{{주거용 주방자동소화장치}}: 방출구(환기구 청소부분 분리·유효높이/면적) · 감지기(유효높이/위치) · 전기/가스 차단장치(상시점검) · 탐지부(수신부 분리: 가벼운가스 천장 {{30cm}}↓ / 무거운가스 바닥 {{30cm}}↓) · 수신부(열기류·습기 피해 상시 가시장소)',
+            '{{상업용 주방자동소화장치}}: 조리기구별 설계매뉴얼 적합 · 감지기 · 차단장치 · 후드 분사헤드(가장 긴 변 끝까지 방출) · 덕트 분사헤드(성능인증 길이 이내)'
+          ]},
+          { type: 'out', text: '열원 자동 차단 및 소화약제 자동 방출' }
+        ]
+      },
+      {
+        title: '캐비닛형 · 가스 · 분말 · 고체에어로졸 자동소화장치 시퀀스', tag: '캐비닛·고정',
+        tip: '💡 표시온도 표: 최고주위 {{39℃↓}}→79℃↓ / {{39~64℃↓}}→79~121℃↓ / {{64~106℃↓}}→121~162℃↓ / {{106℃↑}}→162℃↑ (캐비닛형은 {{교차회로}}!)',
+        steps: [
+          { type: 'or', items: [
+            '{{캐비닛형 자동소화장치}}: 바닥 유효높이 내 분사헤드 · 방호구역 천장/옥내면 화재감지기({{교차회로}} 원칙) · 방출 전 개구부/통기구 자동폐쇄(가스압 폐쇄는 방출과 동시 가능) · 방호체적 이상 소화성능',
+            '{{가스·분말·고체에어로졸 자동소화장치}}: 방호구역 내 형식승인 {{1개}} 제품(연동방식 하나의 형식은 1개로 봄) · 감지부 평상시 최고주위온도별 표시온도(39↓→79↓ / 39~64↓→79~121↓ / 64~106↓→121~162↓ / 106↑→162↑; 열감지선은 형식온도범위; 화재감지기 사용 시 캐비닛형 기준 준용)'
+          ]},
+          { type: 'out', text: '개구부 폐쇄 및 유효 방호체적 소화약제 자동 방사' }
+        ]
       }
-      return rawHtml.replace(/\{\{(.*?)\}\}/g, (_, answer) => {
-        if (appState.revealAllCloze) {
-          return `<span class="cloze-revealed" onclick="toggleSingleCloze(this)" data-ans="${answer}">${answer}</span>`;
-        }
-        return `<span class="cloze-blank" onclick="toggleSingleCloze(this)" data-ans="${answer}">[ ? ]</span>`;
-      });
-    }
+    ]
+  },
 
-    // 개별 빈칸 클릭 시 정답 토글
-    window.toggleSingleCloze = function(el) {
-      const ans = el.getAttribute('data-ans');
-      if (el.classList.contains('cloze-blank')) {
-        el.className = 'cloze-revealed';
-        el.textContent = ans;
-      } else {
-        el.className = 'cloze-blank';
-        el.textContent = '[ ? ]';
+  // ==================== 2. 상수도소화용수설비 ====================
+  {
+    id: 's401', group: 'seq', cat: '1회차: 소화기구 · 용수 · 연결수계',
+    name: '3. [상수도소화용수] 배관 · 거리 · 높이 · 2026 표지규격',
+    desc: '75mm 수도관/100mm 소화전, 140m 수평투영면, 0.5~1m, 2026.10.7 신설 표지 규격',
+    rungs: [
+      {
+        title: '상수도소화용수설비 설치 · 접결 · 높이 · 2026 신설 표지 시퀀스', tag: '상수도용수',
+        tip: '💡 배관 {{75mm}}↑ → 소화전 {{100mm}}↑ | 수평투영면 {{140m}}↓ | 지상식 {{0.5~1m}} | 2026 신설 표지: 폭 {{35cm}}·높이 {{60cm}}·지주 {{100cm}}, 안쪽 흰글씨/{{붉은바탕}}, 바깥 노란글씨/{{파란바탕}}!',
+        steps: [
+          { type: 'a', text: '수도법 기준 외 호칭지름 {{75mm}} 이상의 수도배관에 호칭지름 {{100mm}} 이상의 소화전 접속' },
+          { type: 'a', text: '소방자동차 진입 쉬운 도로변 또는 공지 설치 + 특정소방대상물 수평투영면 각 부분으로부터 {{140m}} 이하 + 지상식 호스접결구 지면 높이 {{0.5m 이상 1m 이하}}' },
+          { type: 'a', text: '소화전 부근 보기 쉬운 곳에 표지 설치(규격: 폭 {{35cm}}·상단문자 {{14cm}}·하단 {{8cm}}·표지높이 {{60cm}}·지주 {{100cm}}; 안쪽 문자 흰색/바탕 {{붉은색}}, 바깥쪽 문자 노란색/바탕 {{파란색}}, {{반사재료}}; 부적당 시 규격 등 달리 가능)' },
+          { type: 'out', text: '상수도소화용수설비 성능·기술기준 적합' }
+        ]
       }
-    };
+    ]
+  },
 
-    // 우측 4단계 법령·기준 카드 렌더링
-    function renderPartInspector() {
-      const container = document.getElementById('inspectorLawContainer');
-      const part = PARTS_DB[appState.selectedPart] || PARTS_DB.main_tank;
-
-      // SVG 노드 하이라이트 갱신
-      document.querySelectorAll('.pid-node').forEach(node => {
-        if (node.getAttribute('data-part') === appState.selectedPart) {
-          node.classList.add('pid-node-selected');
-        } else {
-          node.classList.remove('pid-node-selected');
-        }
-      });
-
-      // 유수검지장치 노드를 선택한 경우 현재 선택된 밸브 타입의 추가 설명 카드 삽입
-      let extraValveHtml = '';
-      if (appState.selectedPart === 'alarm_valve') {
-        const vInfo = VALVE_TYPES[appState.valveType];
-        extraValveHtml = `
-          <div class="bg-amber-500/10 border border-amber-400/40 rounded-xl p-3 text-xs">
-            <div class="font-bold text-amber-300 mb-1">현재 선택된 방식: ${vInfo.title}</div>
-            <div class="text-amber-100/90 font-semibold mb-1">${vInfo.chamberState}</div>
-            <p class="text-slate-300 leading-relaxed">${vInfo.desc}</p>
-          </div>
-        `;
+  // ==================== 3. 소화수조 및 저수조 ====================
+  {
+    id: 's402', group: 'seq', cat: '1회차: 소화기구 · 용수 · 연결수계',
+    name: '4. [소화수조·저수조] 소요수량 · 채수구 · 가압송수장치',
+    desc: '12,500/7,500㎡ 기준면적, 투입구(0.6m)·채수구(1·2·3개), 4.5m 가압송수(1,100·2,200·3,300L), 옥상 0.15MPa',
+    rungs: [
+      {
+        title: '소화수조·저수조 저수량 · 흡수관투입구 · 채수구 시퀀스', tag: '수원·채수구',
+        tip: '💡 1·2층 바닥합 15,000㎡↑={{7,500㎡}}, 그밖={{12,500㎡}} (소수점 이하 {{1}}로 봄 × {{20㎥}}) | 투입구 {{80㎥}} 기준 1/2개 | 채수구 {{40/100㎥}} 기준 1/2/3개!',
+        steps: [
+          { type: 'a', text: '소방차 {{2m 이내}} 접근 가능 위치 설치 (유수의 양 {{0.8㎥/min}} 이상 유수 사용 시 소화수조 미설치 가능)' },
+          { type: 'c', text: '저수량 ≥ (연면적 ÷ 기준면적[1·2층 바닥합 15,000㎡↑={{7,500㎡}}, 그밖={{12,500㎡}}], 소수점 이하 1로 봄) × {{20㎥}}' },
+          { type: 'or', items: [
+            '흡수관투입구(지하): 한변 또는 직경 {{0.6m}}↑ (소요수량 {{80㎥}} 미만 1개↑ / {{80㎥}}↑ 2개↑) + "흡수관투입구" 표지',
+            '채수구(구경 {{65mm}}↑ 나사식 결합금속구, 지면 높이 {{0.5~1m}}): 소요수량 20~40㎥ 미만 {{1개}} / 40~100㎥ 미만 {{2개}} / 100㎥ 이상 {{3개}} + "채수구" 표지'
+          ]},
+          { type: 'out', text: '소화용수 저수·흡수 조건 확보' }
+        ]
+      },
+      {
+        title: '소화수조·저수조 가압송수장치 설치 시퀀스', tag: '가압송수',
+        tip: '💡 깊이 {{4.5m}}↑ 지하 → 양수량 {{1,100 / 2,200 / 3,300 L/min}} | 옥상·옥탑 설치 → 지상 채수구 압력 {{0.15MPa}}↑ | 물올림 {{100L}}↑·급수관 {{15mm}}↑!',
+        steps: [
+          { type: 'or', items: [
+            '지표면 깊이(내부바닥) {{4.5m}} 이상 지하(단, 4.5m 이하에서 소요저수량 확보 시 면제): 양수량 20~40㎥ 미만 {{1,100 L/min}} / 40~100㎥ 미만 {{2,200 L/min}} / 100㎥ 이상 {{3,300 L/min}}',
+            '옥상 또는 옥탑 설치: 지상 채수구 압력 {{0.15MPa}} 이상'
+          ]},
+          { type: 'a', text: '전용 펌프(지장없을 시 겸용)·압력계·연성계/진공계·성능시험배관·순환배관·채수구 직근 보호판 부착 기동스위치·물올림장치({{100L}}↑, {{15mm}}↑ 급수배관)·내연기관(원격기동·적색등·축전지)·부식방지(청동/스테인리스 임펠러·스테인리스 축) + "소화용수설비펌프" 표지' },
+          { type: 'out', text: '가압송수장치 안정적 가동' }
+        ]
       }
+    ]
+  },
 
-      container.innerHTML = `
-        <!-- 부품 타이틀 헤더 -->
-        <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 shadow-md">
-          <div class="flex items-center justify-between gap-2 mb-1">
-            <span class="px-2 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-500/30 text-[10px] font-bold">${part.zone}</span>
-            <span class="text-[11px] font-mono-tech text-slate-400">${part.codeRef}</span>
-          </div>
-          <h2 class="text-base sm:text-lg font-bold text-white tracking-tight">${part.title}</h2>
-          ${extraValveHtml ? `<div class="mt-2.5">${extraValveHtml}</div>` : ''}
-        </div>
-
-        <!-- 1단계: 소방시설 설치 및 관리에 관한 법률 · 시행령 · 시행규칙 -->
-        <div class="bg-slate-950/90 border-l-4 border-sky-500 border-y border-r border-slate-800 rounded-r-xl p-3.5 text-xs space-y-1.5">
-          <div class="flex items-center gap-1.5 font-bold text-sky-400">
-            <span class="px-1.5 py-0.2 rounded bg-sky-500/20 text-[10px]">STEP 1</span>
-            <span>소방시설 설치 및 관리에 관한 법률 · 시행령 · 시행규칙</span>
-          </div>
-          <p class="text-slate-200 leading-relaxed">${formatLawText(part.lawLevel)}</p>
-        </div>
-
-        <!-- 2단계: NFPC 103 (화재안전성능기준) -->
-        <div class="bg-slate-950/90 border-l-4 border-rose-500 border-y border-r border-slate-800 rounded-r-xl p-3.5 text-xs space-y-1.5">
-          <div class="flex items-center gap-1.5 font-bold text-rose-400">
-            <span class="px-1.5 py-0.2 rounded bg-rose-500/20 text-[10px]">STEP 2</span>
-            <span>NFPC 103 (스프링클러설비의 화재안전성능기준)</span>
-          </div>
-          <p class="text-slate-200 leading-relaxed">${formatLawText(part.nfpc)}</p>
-        </div>
-
-        <!-- 3단계: NFTC 103 (화재안전기술기준 - 핵심 수치 & 예외조항) -->
-        <div class="bg-slate-950/90 border-l-4 border-amber-500 border-y border-r border-slate-800 rounded-r-xl p-3.5 text-xs space-y-1.5">
-          <div class="flex items-center gap-1.5 font-bold text-amber-400">
-            <span class="px-1.5 py-0.2 rounded bg-amber-500/20 text-[10px]">STEP 3</span>
-            <span>NFTC 103 (화재안전기술기준 상세 수치 · 예외조건)</span>
-          </div>
-          <div class="text-slate-200 leading-relaxed space-y-1">${formatLawText(part.nftc)}</div>
-        </div>
-
-        <!-- 4단계: 2차 실기 암기 포인트 & 점검 불량 판정 -->
-        <div class="bg-gradient-to-br from-emerald-950/60 to-slate-950 border border-emerald-500/35 rounded-xl p-3.5 text-xs space-y-1.5">
-          <div class="flex items-center gap-1.5 font-bold text-emerald-300">
-            <span>🎯 2차 실기 암기 두문자 &amp; 점검 판정 포인트</span>
-          </div>
-          <p class="text-emerald-100/90 leading-relaxed">${formatLawText(part.examTip)}</p>
-        </div>
-      `;
-    }
-
-    // 실기 시나리오 퀴즈 모드 렌더링
-    function renderQuizMode() {
-      const container = document.getElementById('quizScenarioContainer');
-      const quiz = PRACTICAL_QUIZZES[appState.quizIndex];
-
-      let qHtml = `
-        <div class="flex items-center justify-between bg-slate-950 border border-slate-800 rounded-xl p-3">
-          <span class="text-xs font-bold text-amber-300">소방시설관리사·기술사 2차 실기 판정 훈련</span>
-          <div class="flex gap-1.5">
-            ${PRACTICAL_QUIZZES.map((q, idx) => `
-              <button type="button" onclick="selectQuiz(${idx})" class="px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer ${
-                idx === appState.quizIndex ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-              }">문제 ${idx + 1}</button>
-            `).join('')}
-          </div>
-        </div>
-
-        <div class="bg-slate-950 border border-sky-500/40 rounded-xl p-4 text-xs space-y-2">
-          <div class="font-bold text-sky-400 text-sm">${quiz.title}</div>
-          <p class="text-slate-200 leading-relaxed bg-slate-900/90 p-3 rounded-lg border border-slate-800">
-            <strong>[설계 조건]</strong> ${quiz.scenario}
-          </p>
-        </div>
-      `;
-
-      quiz.questions.forEach((item, qIdx) => {
-        const key = `${quiz.id}_${qIdx}`;
-        const chosen = appState.quizAnswers[key];
-        const isCorrect = chosen === item.answer;
-
-        qHtml += `
-          <div class="bg-slate-950/90 border border-slate-800 rounded-xl p-3.5 text-xs space-y-2.5">
-            <div class="font-bold text-white">${item.label}</div>
-            <div class="flex flex-wrap gap-2">
-              ${item.options.map(opt => {
-                let btnClass = 'bg-slate-900 border-slate-700 text-slate-300 hover:border-sky-400';
-                if (chosen) {
-                  if (opt === item.answer) {
-                    btnClass = 'bg-emerald-600/30 border-emerald-400 text-emerald-200 font-bold';
-                  } else if (opt === chosen) {
-                    btnClass = 'bg-rose-600/30 border-rose-400 text-rose-200 font-bold';
-                  }
-                }
-                return `<button type="button" onclick="answerQuiz('${key}', '${opt}')" class="px-3 py-1.5 rounded-lg border transition cursor-pointer ${btnClass}">${opt}</button>`;
-              }).join('')}
-            </div>
-            ${chosen ? `
-              <div class="p-2.5 rounded-lg text-[11px] leading-relaxed ${
-                isCorrect ? 'bg-emerald-950/70 border border-emerald-500/40 text-emerald-200' : 'bg-rose-950/70 border border-rose-500/40 text-rose-200'
-              }">
-                <strong>${isCorrect ? '✓ 정답입니다!' : `✗ 오답입니다 (정답: ${item.answer})`}</strong><br/>
-                ${item.explain}
-              </div>
-            ` : ''}
-          </div>
-        `;
-      });
-
-      container.innerHTML = qHtml;
-    }
-
-    window.selectQuiz = function(idx) {
-      appState.quizIndex = idx;
-      renderQuizMode();
-    };
-
-    window.answerQuiz = function(key, opt) {
-      appState.quizAnswers[key] = opt;
-      renderQuizMode();
-    };
-
-    // 학습 모드 전환 처리
-    function setStudyMode(mode) {
-      appState.studyMode = mode;
-
-      const btnExplore = document.getElementById('modeExploreBtn');
-      const btnCloze = document.getElementById('modeClozeBtn');
-      const btnQuiz = document.getElementById('modeQuizBtn');
-      const revealBtn = document.getElementById('btnRevealAllCloze');
-      const lawBox = document.getElementById('inspectorLawContainer');
-      const quizBox = document.getElementById('quizScenarioContainer');
-      const badge = document.getElementById('modeBadge');
-      const desc = document.getElementById('modeDesc');
-
-      // 버튼 스타일 초기화
-      [btnExplore, btnCloze, btnQuiz].forEach(b => {
-        b.className = 'px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition cursor-pointer';
-      });
-
-      if (mode === 'EXPLORE') {
-        btnExplore.className = 'px-2.5 py-1.5 rounded-lg text-xs font-bold bg-sky-600 text-white shadow transition cursor-pointer';
-        badge.className = 'px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/40 text-[11px] font-bold';
-        badge.textContent = '탐험 모드';
-        desc.textContent = '계통도 부품을 클릭해 법령·기준·실기 포인트를 확인하세요.';
-        revealBtn.classList.add('hidden');
-        lawBox.classList.remove('hidden');
-        quizBox.classList.add('hidden');
-        renderPartInspector();
-      } else if (mode === 'CLOZE') {
-        btnCloze.className = 'px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 text-white shadow transition cursor-pointer';
-        badge.className = 'px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[11px] font-bold';
-        badge.textContent = '빈칸 암기 모드';
-        desc.textContent = '핵심 수치가 [ ? ]로 가려졌습니다. 빈칸을 클릭해 정답을 확인하세요!';
-        revealBtn.classList.remove('hidden');
-        lawBox.classList.remove('hidden');
-        quizBox.classList.add('hidden');
-        renderPartInspector();
-      } else if (mode === 'QUIZ') {
-        btnQuiz.className = 'px-2.5 py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 shadow transition cursor-pointer';
-        badge.className = 'px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[11px] font-bold';
-        badge.textContent = '실기 시나리오';
-        desc.textContent = '건축물 조건을 보고 기준개수, 저수량, 방호구역, 면제여부를 판정하세요.';
-        revealBtn.classList.add('hidden');
-        lawBox.classList.add('hidden');
-        quizBox.classList.remove('hidden');
-        renderQuizMode();
+  // ==================== 4. 연결송수관설비 ====================
+  {
+    id: 's502_a', group: 'seq', cat: '1회차: 소화기구 · 용수 · 연결수계',
+    name: '5. [연결송수관] 송수구 · 탬퍼스위치 · 배관 · 겸용',
+    desc: '송수구 0.5~1m·65mm 쌍구형, 습식/건식 밸브순서, 주배관 100mm↑, 31m/11층 습식, 성능시험배관 175%',
+    rungs: [
+      {
+        title: '연결송수관 송수구 · 개폐밸브(탬퍼스위치) · 밸브배열 시퀀스', tag: '송수구',
+        tip: '💡 습식: {{송수구·자동배수밸브·체크밸브}} | 건식: {{송수구·자동배수밸브·체크밸브·자동배수밸브}} | 탬퍼스위치 배선={{내화·내열전선}}!',
+        steps: [
+          { type: 'a', text: '송수구: 소방차 접근쉬운 곳·떨어지는 유리창 지장없는 곳 · 지면 {{0.5~1m}} · 구경 {{65mm}} 쌍구형 · 수직배관마다 1개↑(중간 개폐밸브 없이 상호연결 시 건물마다 1개) · 송수압력범위 표지 · "연결송수관설비송수구" 표지 · 마개' },
+          { type: 'a', text: '밸브 배열: 습식({{송·자·체}}) / 건식({{송·자·체·자}}) | 연결배관 개폐밸브 설치 시 옥외·기계실 등 설치 + {{탬퍼스위치}}(잠길 시 감시제어반/수신기 표시·경보음, 동작/도통시험, {{내화·내열전선}})' },
+          { type: 'out', text: '송수구 정상 송수 경로 확보 (옥내소화전 겸용 시 연결송수관 기준 따름)' }
+        ]
+      },
+      {
+        title: '연결송수관 배관 구경 · 습식기준 · 재질 · 수직배관 보호 시퀀스', tag: '배관등',
+        tip: '💡 주배관 {{100mm}}↑(100mm↑ 옥내소화전 겸용 가능) | {{31m}}↑ 또는 지상 {{11층}}↑={{습식}} | 성능시험배관 직관부 정격 {{175%}}↑!',
+        steps: [
+          { type: 'a', text: '주배관 구경 {{100mm}}↑(100mm↑ 옥내소화전 겸용 가능) · 지면높이 {{31m}}↑ 또는 지상 {{11층}}↑ {{습식설비}} · 수직배관 내화계단실(부속실) 또는 파이프덕트 설치(학교·공장·1시간내화 보호 예외)' },
+          { type: 'a', text: '사용압력 {{1.2MPa}} 미만(KS D 3507, 5301습식, 3576·3595, 4311) / 이상(KS D 3562, 3583) · 특정장소(지하매설·내화덕트피트·불연/준불연천장반자 상시만수) 소방용합성수지배관 가능 · 성능시험배관 직관부 유량측정장치 정격토출량 {{175%}}↑ · 적색/KS A 0503 식별' },
+          { type: 'out', text: '연결송수관 주배관 내압·내화 안전성 확보' }
+        ]
       }
-    }
-
-    // 유수검지장치 5가지 타입 변경 시 SVG 및 인스펙터 업데이트
-    function updateValveType(type) {
-      appState.valveType = type;
-      const vData = VALVE_TYPES[type];
-      document.getElementById('svgValveTypeTitle').textContent = vData.title;
-      document.getElementById('svgValveChamberState').textContent = vData.chamberState;
-      if (appState.studyMode !== 'QUIZ') {
-        renderPartInspector();
+    ]
+  },
+  {
+    id: 's502_b', group: 'seq', cat: '1회차: 소화기구 · 용수 · 연결수계',
+    name: '6. [연결송수관] 방수구 · 방수기구함 · 70m↑ 가압송수',
+    desc: '방수구 제외·5m/25·50m·11층↑ 쌍구형, 3개층 방수기구함, 최상층 70m↑ 펌프(2,400L·0.35MPa·5분수조·20분전원)',
+    rungs: [
+      {
+        title: '연결송수관 방수구 및 방수기구함 설치 시퀀스', tag: '방수구·기구함',
+        tip: '💡 방수구: 계단(또는 부속실 출입구) {{5m}} 이내 · 수평 {{25m/50m}} · {{11층↑}} 쌍구형 | 방수기구함: 피난층 기준 {{3개층}}마다(호스 {{15m}}·방사형관창 단구1/쌍구2)!',
+        steps: [
+          { type: 'a', text: '방수구(층마다 설치, {{0.5~1m}}, {{65mm}}, 표시등/축광표지, 평상시 닫힘): 계단(1천㎡↓ 1개 / 1천㎡↑ 2개; 부속실 출입구 포함) 보행 {{5m}} 이내 + 수평거리 초과 시 추가(지하가·지하바닥합 3천㎡↑ {{25m}} / 그밖 {{50m}}) + {{11층↑}} 쌍구형(아파트·SP유효&2개소↑ 단구 가능)' },
+          { type: 'b', text: '방수구 설치 제외: ① 아파트 1·2층 ② 소방차접근 피난층 ③ 송수구부설 옥내소화전 대상(집회·관람·백화·도소매·판매·공장·창고·지하가 제외)의 4층↓&6천㎡↓ 지상층 및 지하2층↓ 지하층' },
+          { type: 'out', text: '방수기구함(피난층 가까운 층 기준 {{3개층}}마다, 방수구 보행 {{5m}} 이내): {{15m}} 호스 + 방사형 관창(단구 {{1개}}/쌍구 {{2개}}↑) + 축광식 표지' }
+        ]
+      },
+      {
+        title: '최상층 방수구 높이 70m↑ 가압송수장치 · 전원 · 배선 시퀀스', tag: '70m↑ 가압송수',
+        tip: '💡 {{70m}}↑ 펌프: {{2,400 L/min}}(계단아파트 {{1,200}}) + 3개초과(최대5) 개당 {{+800}}(+400) | 노즐 {{0.35MPa}}↑ | 시험수조 정격 {{150% × 5분}} | 비상전원 {{20분}}↑!',
+        steps: [
+          { type: 'c', text: '지표면~최상층 방수구 높이 ≥ {{70m}} → 전용펌프(겸용가능): 체절 {{140%}}↓, {{150%}} 시 {{65%}}↑, 토출량 {{2,400 L/min}}(계단아파트 {{1,200}})+3개초과(최대5) 개당 {{+800}}(+400), 노즐선단 {{0.35MPa}}↑' },
+          { type: 'a', text: '전용 시험수조(정격 {{150%}}×{{5분}}↑)·배수설비 · 수동스위치 2개↑(1개는 송수구 {{5m}} 내 높이 {{0.8~1.5m}}, {{1.5mm}}↑ 강판함, 접지) · 압력챔버 {{100L}}↑ · 물올림 {{100L}}↑/{{15mm}}↑ · 충압펌프(자연압 {{+0.2MPa}} or 정격압) · 자동정지 금지 · 부식방지 재질' },
+          { type: 'out', text: '비상전원(자가·축전·전기저장) {{20분}}↑ 작동 + 비상전원→제어반·펌프 {{내화배선}}(동일실 자가발전 제외), 감시조작표시 {{내화/내열배선}} + "연결송수관설비용/단자" 표지' }
+        ]
       }
-      showToast(`${vData.title} 계통으로 전환되었습니다.`);
-    }
+    ]
+  },
 
-    // =========================================================================
-    // 5. 화재 연동 시퀀스 애니메이션 제어 (6단계 실시간 흐름)
-    // =========================================================================
-    function startFireSimulation() {
-      stopFireSimulation(true);
-      appState.simRunning = true;
-
-      const banner = document.getElementById('fireSimBanner');
-      banner.classList.remove('hidden');
-
-      const vData = VALVE_TYPES[appState.valveType];
-      const steps = vData.simSteps;
-
-      const pipesAndWires = [
-        ['wireDetectorToSvp'],
-        ['wireSvpToValve'],
-        ['pipeSecondaryMain', 'pipeBranch1', 'pipeBranch2', 'pipeBranch3'],
-        ['pipeSuction', 'pipePrimary', 'wireValveToMcc', 'wireChamberToMcc', 'wireMccToPump'],
-        ['wireMccToReceiver', 'wireEmergencyPower'],
-        ['pipeEndTest']
-      ];
-
-      steps.forEach((stepDesc, idx) => {
-        const timer = setTimeout(() => {
-          document.getElementById('simStepTitle').textContent = `[STEP ${idx + 1}/6] ${stepDesc}`;
-
-          // 진행 알약 강조
-          for (let i = 1; i <= 6; i++) {
-            const pill = document.getElementById(`stepPill${i}`);
-            if (i <= idx + 1) {
-              pill.className = 'py-1 px-1 rounded bg-rose-600 text-white border border-rose-300 font-bold shadow';
-            }
-          }
-
-          // 해당 단계 배관·전기선 흐름 활성화
-          const targets = pipesAndWires[idx] || [];
-          targets.forEach(elId => {
-            const el = document.getElementById(elId);
-            if (el) {
-              if (elId.startsWith('wire')) {
-                el.classList.add('elec-flow-active');
-              } else {
-                el.classList.add('pipe-flow-active');
-              }
-            }
-          });
-
-          // 마지막 6단계: 헤드 물 분사 애니메이션 점등
-          if (idx === 5) {
-            document.getElementById('waterSprayGroup').classList.remove('hidden');
-            showToast('화재 연동 시퀀스 완료: 헤드 개방 및 정격 방수 개시!');
-          }
-        }, idx * 1400);
-
-        appState.simTimers.push(timer);
-      });
-    }
-
-    function stopFireSimulation(silent = false) {
-      appState.simTimers.forEach(t => clearTimeout(t));
-      appState.simTimers = [];
-      appState.simRunning = false;
-
-      document.getElementById('fireSimBanner').classList.add('hidden');
-      document.getElementById('waterSprayGroup').classList.add('hidden');
-
-      for (let i = 1; i <= 6; i++) {
-        const pill = document.getElementById(`stepPill${i}`);
-        pill.className = 'py-1 px-1 rounded bg-slate-800/80 text-slate-400 border border-slate-700';
+  // ==================== 5. 연결살수설비 ====================
+  {
+    id: 's503_a', group: 'seq', cat: '1회차: 소화기구 · 용수 · 연결수계',
+    name: '7. [연결살수] 송수구 · 선택밸브 · 배관·구경·행거',
+    desc: '송수구 65mm 쌍구/단구, 가스 20m이격, 개방형 10개이하, 전용헤드 구경, 토너먼트X, 가지 8개·행거 3.5/4.5m',
+    rungs: [
+      {
+        title: '연결살수 송수구 · 선택밸브 · 자동배수/체크밸브 시퀀스', tag: '송수구·밸브',
+        tip: '💡 개방형 1구역 헤드 {{10개}} 이하(이때 {{단구형}} 송수구 가능) | 가스시설 송수구 {{20m}}↑(높이 {{1.5m}}×폭 {{2.5m}} 철근콘크리트벽 예외) | 폐쇄형={{송·자·체}} / 개방형={{송·자}}!',
+        steps: [
+          { type: 'a', text: '송수구({{0.5~1m}}, {{65mm}} 쌍구형[1송수구역 {{10개}}↓ 시 단구 가능], 연결배관 개폐밸브 금지[SP·물분무·포·연결송수관 겸용 제외], 마개, 표지·일람표): 개방형은 구역마다(선택밸브+주요구조부 내화 시 예외), 가스시설은 {{20m}}↑ 이격(1.5×2.5m 철콘벽 예외)' },
+          { type: 'a', text: '선택밸브(화재연소 우려X·일람표·방수없이 자동밸브 작동시험 가능) + 자동배수밸브·체크밸브(폐쇄형={{송·자·체}} / 개방형={{송·자}}) + 개방형 1송수구역 살수헤드 {{10개}} 이하' },
+          { type: 'out', text: '송수구역별 안전한 살수 공급 제어' }
+        ]
+      },
+      {
+        title: '연결살수 배관 구경 · 폐쇄형/개방형 배관 · 행거 기준 시퀀스', tag: '배관·행거',
+        tip: '💡 전용헤드 구경: 1개 {{32}} / 2개 {{40}} / 3개 {{50}} / 4·5개 {{65}} / 6~10개 {{80mm}} | 교차 최소 {{40mm}}↑ | 한쪽 가지 {{8개}}↓ | 행거: 가지 {{3.5m}}(상향식 {{8cm}}↑)·교차/수평주행 {{4.5m}}!',
+        steps: [
+          { type: 'or', items: [
+            '배관구경: 전용헤드(1개 {{32mm}}, 2개 {{40mm}}, 3개 {{50mm}}, 4~5개 {{65mm}}, 6~10개 {{80mm}}) / 스프링클러헤드(스프링클러 기준) / 교차배관 최소 {{40mm}}↑',
+            '폐쇄형 배관: 주배관(옥내주배관·최대구경수도관·옥상수조+체크밸브) · 가장 먼 가지배관 끝 {{25mm}}↑ 시험배관(물받이통·배수관, 배수쉬운곳 생략) · 청소구 {{40mm}}↑ 개폐밸브 · 하향식 상부분기(먹는물수질+덮개저수조 시 측면/하부 가능)',
+            '개방형 배관: 수평주행배관 헤드향해 상향 {{1/100}}↑ 기울기 + 낮은부분 자동배수밸브'
+          ]},
+          { type: 'a', text: '토너먼트 배열 금지 · 한쪽 가지배관 헤드 {{8개}}↓ · 동결방지(보온재 난연↑) · 급수개폐밸브 개폐표시형(흡입측 버터플라이[볼형식 외] 금지) · 행거(가지 {{3.5m}}초과 {{3.5m}}마다·상향식 {{8cm}}↑ / 교차·수평주행 {{4.5m}})' },
+          { type: 'out', text: '연결살수 배관 및 지지 안전성 확보' }
+        ]
       }
-
-      document.querySelectorAll('.pipe-flow-active').forEach(el => el.classList.remove('pipe-flow-active'));
-      document.querySelectorAll('.elec-flow-active').forEach(el => el.classList.remove('elec-flow-active'));
-
-      if (!silent) {
-        showToast('계통도 및 수신기가 정상 대기 상태로 복구되었습니다.');
+    ]
+  },
+  {
+    id: 's503_b', group: 'seq', cat: '1회차: 소화기구 · 용수 · 연결수계',
+    name: '8. [연결살수] 헤드 배치 · 개구부/가스 · 설치제외',
+    desc: '수평거리 3.7/2.3m, SP헤드 반경60cm·부착면30cm·개구부2.5m/15cm, 측벽형, 가스 3.7m, 제외 14종',
+    rungs: [
+      {
+        title: '연결살수 전용헤드 · 스프링클러헤드 · 개구부 · 가스시설 헤드 시퀀스', tag: '헤드배치',
+        tip: '💡 수평거리: 전용 {{3.7m}}↓ / SP {{2.3m}}↓(부착높이 {{2.1m}}↓ 시 살수분포) | 개구부 {{2.5m}} 간격·내측 {{15cm}}↓(상시출입 폭 {{9m}}↓ {{1.2m}}↓) | 측벽형 {{3.6m}}↓(폭 4.5~9m 양쪽 나란히꼴)!',
+        steps: [
+          { type: 'a', text: '천장·반자 실내면 수평거리: 전용헤드 {{3.7m}}↓ / SP헤드 {{2.3m}}↓(높이 {{2.1m}}↓ 시 살수분포거리) · 가스저장취급(지하 미노출 제외): 전용 개방형 헤드 상호 {{3.7m}}↓(몸체 중간 윗부분 살수·흘러내림 적심)' },
+          { type: 'or', items: [
+            '폐쇄형SP헤드: 표시온도 표(39↓→79↓ / 39~64↓→79~121↓ / 64~106↓→121~162↓ / 106↑→162↑; 4m↑ 공장창고 온도무관 121℃↑ 가능) · 반경 {{60cm}}↑(벽 {{10cm}}↑) · 부착면 {{30cm}}↓ · 장애물 폭 {{3배}}↑ 이격(아니면 아래설치)',
+            '기울기 > {{1/10}}: 최상부 반사판 수평 OR 마주볼 시 최상부 가지간격 {{1/2}}↓(최소 {{1m}}↑)·수직 {{90cm}}↓ | 습식 외: {{상향식}} 원칙(드라이펜던트·비동파·개방형 예외)',
+            '연소우려 개구부: 상하좌우 {{2.5m}} 간격·내측면 {{15cm}}↓(상시출입 시 폭 {{9m}}↓ 상부/측면 {{1.2m}}↓) | 측벽형: 긴변 일렬 {{3.6m}}↓(폭 {{4.5~9m}} 양쪽 나란히꼴)'
+          ]},
+          { type: 'out', text: '헤드 살수·감열 유효성 확보' }
+        ]
+      },
+      {
+        title: '연결살수 헤드 설치제외 장소(14종) 및 송수구 겸용 시퀀스', tag: '설치제외·겸용',
+        tip: '💡 천장·반자 사이 거리 제외: 양쪽불연 {{2m}}↓(또는 가연물X {{2m}}↑) / 한쪽불연 {{1m}}↓ / 불연외 {{0.5m}}↓ | 로비 {{20m}}↑ | 상점 내화·방화 {{500㎡}}↓(지하 {{150㎡}}↑ 제외)!',
+        steps: [
+          { type: 'or', items: [
+            '상점(판매·운수시설; 바닥 {{150㎡}}↑ 지하층 제외) 내화·방화구조 & {{500㎡}} 미만 방화구획',
+            '계단실(부속실)·경사로·승강로·파이프덕트·목욕실·수영장(관람석 외)·화장실·외기개방복도 / 통신·전자·발전·변전·변압기실 / 수술·응급처치실 / 펌프·물탱크실',
+            '천장·반자 사이: 양쪽불연 {{2m}}↓ OR (벽불연·{{2m}}↑·가연물X) / 한쪽불연 {{1m}}↓ / 불연외 {{0.5m}}↓',
+            '현관·로비 바닥높이 {{20m}}↑ / 영하 냉장실·냉동실 / 고온노·물격렬반응 / 불연(정수·오물·펄프·음료세정·가연물X 불연금속석재공장) / 실내테니스·게이트볼·정구장(불연/준불연·가연물X·무관람석, 지하층 제외)'
+          ]},
+          { type: 'out', text: '해당 장소 헤드 설치 제외 (송수구 겸용: SP·간이·조기·물분무·포→SP 기준 / 옥내→옥내 기준)' }
+        ]
       }
-    }
+    ]
+  }
+];
 
-    // =========================================================================
-    // 6. 하단 미니 수원·펌프 연산기 및 P-Q 곡선 버튼 로직
-    // =========================================================================
-    function updateQuickCalculator() {
-      const val = document.getElementById('quickBuildingSelect').value;
-      const presets = {
-        apt_15: { n: 10, roof: '16.0 ㎥ (1/3)', flow: '800 L/min' },
-        mall_12: { n: 30, roof: '16.0 ㎥ (1/3)', flow: '2,400 L/min' },
-        warehouse: { n: 30, roof: '16.0 ㎥ (1/3)', flow: '2,400 L/min' },
-        office_8: { n: 10, roof: '5.33 ㎥ (1/3)', flow: '800 L/min' }
-      }[val];
+const QUIZ_BANK = [
+  { cat: '소화기구', q: '할론 소화약제는 다음 중 어떤 화재에 대한 적응성이 없는가?', opts: ['A급 화재(일반화재)', 'B급 화재(유류화재)', 'C급 화재(전기화재)', '모두 적응성 있음'], ans: 0, exp: '이산화탄소와 할론 소화약제는 B급(유류)과 C급(전기)에만 적응성이 있고 A급(일반화재)에는 적응성이 없습니다.' },
+  { cat: '소화기구', q: '마그네슘 합금 칩을 저장 또는 취급하는 장소에 설치해야 하는 소화기와 보행거리 기준은?', opts: ['K급 1개↑ · 10m 이내', 'D급 1개↑ · 20m 이내', 'D급 2개↑ · 30m 이내', '대형소화기 1개↑ · 20m 이내'], ans: 1, exp: '금속화재용 소화기(D급) 1개 이상을 금속재료로부터 보행거리 20m 이내에 설치해야 합니다(2024.7.25 개정).' },
+  { cat: '소화기구', q: '소형소화기의 보행거리와 대형소화기의 보행거리 기준은 각각 얼마 이내인가?', opts: ['소형 15m · 대형 25m', '소형 20m · 대형 30m', '소형 25m · 대형 30m', '소형 20m · 대형 40m'], ans: 1, exp: '소형소화기는 20m 이내, 대형소화기는 30m 이내입니다.' },
+  { cat: '소화기구', q: '부속용도 중 보일러실·주방 등에 자동확산소화기를 설치할 때 바닥면적 10㎡ 초과 시 설치 개수는?', opts: ['1개 이상', '2개 이상', '3개 이상', '25㎡마다 1개'], ans: 1, exp: '자동확산소화기는 바닥면적 10㎡ 이하는 1개, 10㎡ 초과는 2개 이상을 설치합니다.' },
+  { cat: '소화기구', q: '소형소화기 설치 시 옥내소화전·스프링클러 등이 설치되어 있어도 2/3(또는 1/2) 감소를 할 수 없는 경우가 아닌 것은?', opts: ['층수 11층 이상 부분', '근린생활시설', '무인변전소인 업무시설', '의료시설'], ans: 2, exp: '11층 이상, 근생, 위락, 문집 등 15개 용도는 감소가 불가하지만, 업무시설 중 무인변전소는 감소할 수 있습니다.' },
 
-      const totalQ = (presets.n * 1.6).toFixed(1);
-      document.getElementById('quickCalcResult').innerHTML = `
-        <div class="bg-slate-900 rounded-lg p-1.5 border border-slate-800">
-          <div class="text-[10px] text-slate-400">기준개수(<span class="math-var">N</span>)</div>
-          <div class="font-bold text-amber-300 font-mono-tech">${presets.n} 개</div>
-        </div>
-        <div class="bg-slate-900 rounded-lg p-1.5 border border-slate-800">
-          <div class="text-[10px] text-slate-400">지하수조(<span class="math-var">Q</span>)</div>
-          <div class="font-bold text-sky-300 font-mono-tech">${totalQ} ㎥</div>
-        </div>
-        <div class="bg-slate-900 rounded-lg p-1.5 border border-slate-800">
-          <div class="text-[10px] text-slate-400">펌프 토출량</div>
-          <div class="font-bold text-rose-300 font-mono-tech">${presets.flow}</div>
-        </div>
-      `;
-    }
+  { cat: '상수도용수', q: '상수도소화용수설비에서 수도배관의 최소 호칭지름과 접속하는 소화전의 최소 호칭지름은?', opts: ['수도 50mm · 소화전 75mm', '수도 75mm · 소화전 100mm', '수도 100mm · 소화전 100mm', '수도 75mm · 소화전 65mm'], ans: 1, exp: '호칭지름 75mm 이상의 수도배관에 호칭지름 100mm 이상의 소화전을 접속해야 합니다.' },
+  { cat: '상수도용수', q: '상수도소화용수설비의 소화전은 특정소방대상물의 수평투영면의 각 부분으로부터 얼마 이하가 되도록 설치하는가?', opts: ['100m 이하', '120m 이하', '140m 이하', '180m 이하'], ans: 2, exp: '수평투영면의 각 부분으로부터 140m 이하가 되도록 설치해야 합니다.' },
+  { cat: '상수도용수', q: '지상식 소화전의 호스접결구 설치 높이(지면으로부터) 기준으로 옳은 것은?', opts: ['0.3m 이상 0.8m 이하', '0.5m 이상 1m 이하', '0.8m 이상 1.5m 이하', '1.0m 이상 1.5m 이하'], ans: 1, exp: '지면으로부터 높이 0.5m 이상 1m 이하가 되도록 설치합니다.' },
+  { cat: '상수도용수', q: '2026.10.7 신설된 상수도소화용수설비 표지의 색상 기준으로 옳은 것은?', opts: ['안쪽 문자 흰색·붉은 바탕 / 바깥쪽 문자 노란색·파란 바탕', '안쪽 문자 노란색·파란 바탕 / 바깥쪽 문자 흰색·붉은 바탕', '안쪽 문자 검은색·흰 바탕 / 바깥쪽 문자 흰색·붉은 바탕', '안쪽 문자 흰색·파란 바탕 / 바깥쪽 문자 노란색·검은 바탕'], ans: 0, exp: '안쪽 문자는 흰색·바탕은 붉은색, 바깥쪽 문자는 노란색·바탕은 파란색으로 하고 반사재료를 사용해야 합니다.' },
+  { cat: '상수도용수', q: '2026.10.7 신설된 상수도소화용수설비 표지 규격에서 표지판의 가로 폭과 전체 지주(하단) 길이는?', opts: ['폭 30cm · 지주 80cm', '폭 35cm · 지주 100cm', '폭 40cm · 지주 120cm', '폭 50cm · 지주 100cm'], ans: 1, exp: '도면 규격상 폭 35cm, 표지 높이 60cm(상단 14cm·하단 8cm), 지주 100cm입니다.' },
 
-    // 이벤트 바인딩
-    document.querySelectorAll('.pid-node').forEach(node => {
-      node.addEventListener('click', () => {
-        appState.selectedPart = node.getAttribute('data-part');
-        if (appState.studyMode === 'QUIZ') {
-          setStudyMode('EXPLORE');
-        } else {
-          renderPartInspector();
-        }
-      });
+  { cat: '소화수조', q: '소화수조·저수조 저수량 산정 시 1층 및 2층 바닥면적 합계가 15,000㎡ 이상인 대상물의 기준면적은?', opts: ['5,000㎡', '7,500㎡', '10,000㎡', '12,500㎡'], ans: 1, exp: '1·2층 바닥합 15,000㎡ 이상은 7,500㎡, 그 밖은 12,500㎡로 나누어(소수점 이하 1로 봄) 20㎥를 곱합니다.' },
+  { cat: '소화수조', q: '소화수조·저수조의 채수구 또는 흡수관투입구는 소방차가 최소 몇 m 이내 지점까지 접근할 수 있어야 하는가?', opts: ['1m 이내', '2m 이내', '3m 이내', '5m 이내'], ans: 1, exp: '소방차가 2m 이내 지점까지 접근할 수 있는 위치에 설치해야 합니다.' },
+  { cat: '소화수조', q: '소화수조·저수조 소요수량이 100㎥ 이상인 경우 필요한 채수구 개수와 가압송수장치 1분당 양수량은?', opts: ['채수구 2개 · 2,200L', '채수구 3개 · 2,200L', '채수구 3개 · 3,300L', '채수구 4개 · 3,300L'], ans: 2, exp: '20~40미만(1개·1,100L), 40~100미만(2개·2,200L), 100㎥ 이상(3개·3,300L)입니다.' },
+  { cat: '소화수조', q: '지표면으로부터 깊이가 몇 m 이상인 지하에 소화수조가 있을 때 가압송수장치를 설치해야 하는가?', opts: ['3.0m 이상', '4.0m 이상', '4.5m 이상', '5.0m 이상'], ans: 2, exp: '수조 내부바닥까지의 깊이가 4.5m 이상인 지하에 있는 경우 가압송수장치를 설치합니다(4.5m 이하에서 소요수량 확보 시 면제).' },
+  { cat: '소화수조', q: '소화수조가 옥상 또는 옥탑에 설치된 경우 지상에 설치된 채수구에서의 최소 압력은?', opts: ['0.10MPa 이상', '0.15MPa 이상', '0.20MPa 이상', '0.35MPa 이상'], ans: 1, exp: '지상에 설치된 채수구에서의 압력이 0.15MPa 이상이 되도록 해야 합니다.' },
+
+  { cat: '연결송수관', q: '연결송수관설비의 주배관 최소 구경과 습식설비로 해야 하는 대상물의 높이·층수 기준은?', opts: ['65mm · 25m↑ 또는 10층↑', '100mm · 31m↑ 또는 지상 11층↑', '100mm · 35m↑ 또는 11층↑', '125mm · 31m↑ 또는 지상 11층↑'], ans: 1, exp: '주배관 구경 100mm 이상이며, 지면 높이 31m 이상 또는 지상 11층 이상은 습식설비로 해야 합니다.' },
+  { cat: '연결송수관', q: '연결송수관설비 송수구 부근에 자동배수밸브와 체크밸브를 설치할 때 건식설비의 올바른 설치 순서는?', opts: ['송수구 · 체크밸브 · 자동배수밸브', '송수구 · 자동배수밸브 · 체크밸브', '송수구 · 자동배수밸브 · 체크밸브 · 자동배수밸브', '송수구 · 체크밸브 · 자동배수밸브 · 체크밸브'], ans: 2, exp: '습식은 송·자·체 순이고, 건식은 송·자·체·자 순으로 설치합니다.' },
+  { cat: '연결송수관', q: '지표면에서 최상층 방수구의 높이가 몇 m 이상일 때 연결송수관설비 가압송수장치를 설치해야 하는가?', opts: ['31m 이상', '50m 이상', '70m 이상', '100m 이상'], ans: 2, exp: '최상층 방수구 높이 70m 이상일 때 전용 가압송수장치(노즐선단 0.35MPa↑, 2,400L/min[계단아파트 1,200])를 설치합니다.' },
+  { cat: '연결송수관', q: '연결송수관설비의 방수기구함 설치 층수 기준과 방수구로부터의 보행거리 기준은?', opts: ['매층 · 5m 이내', '2개층마다 · 5m 이내', '3개층마다 · 5m 이내', '3개층마다 · 10m 이내'], ans: 2, exp: '피난층과 가장 가까운 층을 기준으로 3개층마다 설치하되, 그 층의 방수구마다 보행거리 5m 이내에 설치합니다.' },
+  { cat: '연결송수관', q: '연결송수관설비 가압송수장치의 성능시험 전용수조 유효수량 및 비상전원 작동시간 기준으로 옳은 것은?', opts: ['정격토출량 100%로 5분↑ · 전원 20분↑', '정격토출량 150%로 5분↑ · 전원 20분↑', '정격토출량 150%로 10분↑ · 전원 30분↑', '정격토출량 150%로 20분↑ · 전원 60분↑'], ans: 1, exp: '수조 유효수량은 펌프 정격토출량의 150%로 5분 이상 시험할 수 있는 양 이상이며, 비상전원은 20분 이상 작동해야 합니다.' },
+
+  { cat: '연결살수', q: '연결살수설비 전용헤드를 사용할 때 하나의 배관에 부착하는 헤드가 4개 또는 5개인 경우 배관의 최소 구경은?', opts: ['40mm', '50mm', '65mm', '80mm'], ans: 2, exp: '1개 32mm, 2개 40mm, 3개 50mm, 4·5개 65mm, 6~10개 80mm입니다.' },
+  { cat: '연결살수', q: '개방형헤드를 사용하는 연결살수설비에서 하나의 송수구역에 설치하는 살수헤드의 최대 개수는?', opts: ['8개 이하', '10개 이하', '12개 이하', '15개 이하'], ans: 1, exp: '하나의 송수구역에 설치하는 살수헤드 수는 10개 이하(가지배관 한쪽은 8개 이하)로 해야 합니다.' },
+  { cat: '연결살수', q: '개방형헤드를 사용하는 연결살수설비의 수평주행배관 기울기 기준은?', opts: ['헤드 향해 상향 1/100 이상', '헤드 향해 하향 1/100 이상', '송수구 향해 상향 1/250 이상', '수평 설치'], ans: 0, exp: '수평주행배관은 헤드를 향하여 상향으로 100분의 1 이상의 기울기로 설치합니다.' },
+  { cat: '연결살수', q: '연결살수설비에서 천장 또는 반자의 각 부분으로부터 하나의 헤드까지의 수평거리 기준은?', opts: ['전용헤드 2.3m · SP헤드 3.7m', '전용헤드 3.7m · SP헤드 2.3m', '전용헤드 3.6m · SP헤드 2.1m', '전용헤드 3.7m · SP헤드 2.1m'], ans: 1, exp: '연결살수설비 전용헤드는 3.7m 이하, 스프링클러헤드는 2.3m 이하입니다(부착높이 2.1m 이하는 살수분포 거리).' },
+  { cat: '연결살수', q: '연결살수설비 헤드 설치 제외 장소 중 천장과 반자 사이의 거리 기준으로 틀린 것은?', opts: ['양쪽 불연재료 & 거리 2m 미만', '한쪽 불연재료 & 거리 1m 미만', '양쪽 불연재료 외 & 거리 0.5m 미만', '양쪽 불연재료 & 벽 불연 & 거리 2m 이상 & 가연물 존재'], ans: 3, exp: '천장과 반자 사이 벽이 불연이고 거리가 2m 이상인 경우에는 그 사이에 가연물이 존재하지 않는 부분만 설치 제외됩니다.' }
+];
+
+// ==================== STATE & ENGINE ====================
+let activeId = 'study_num';
+let blankMode = false;
+let quizFilter = 'ALL';
+let quizIdx = 0, quizScore = 0, quizAnswered = false, wrongSet = new Set();
+const stateMap = {};
+const memMap = JSON.parse(localStorage.getItem('fire_std_mem_v1') || '{}');
+
+function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function formatText(raw) {
+  const re = /(?:\{\{([^}]+)\}\}|(\d+(?:,\d+)*(?:\.\d+)?\s*(?:일|개월|년|분|초|㎡|㎠|㎥|mm|cm|m|kg|L\/min|L|MPa|℃|V|단위|배|층|개소|개|배|시간|%)))/g;
+  let last = 0, out = '', m;
+  while ((m = re.exec(raw)) !== null) {
+    out += escapeHtml(raw.slice(last, m.index));
+    const val = m[1] || m[2];
+    out += blankMode
+      ? `<span class="blank-chip" onclick="event.stopPropagation(); this.classList.toggle('revealed')" title="클릭하여 정답 확인">${escapeHtml(val)}</span>`
+      : `<span class="hl-num">${escapeHtml(val)}</span>`;
+    last = re.lastIndex;
+  }
+  return out + escapeHtml(raw.slice(last));
+}
+
+function toggleBlankMode() {
+  blankMode = !blankMode;
+  const btn = document.getElementById('btnBlank');
+  btn.textContent = blankMode ? '🧠 빈칸 암기모드: ON' : '🧠 빈칸 암기모드: OFF';
+  btn.classList.toggle('blank-on', blankMode);
+  renderMain();
+}
+function revealAllBlanks() { document.querySelectorAll('.blank-chip').forEach(el => el.classList.add('revealed')); }
+function toggleMem(key) {
+  memMap[key] = !memMap[key];
+  localStorage.setItem('fire_std_mem_v1', JSON.stringify(memMap));
+  updateProgress(); renderSidebar(); renderMain();
+}
+function resetProgress() {
+  Object.keys(memMap).forEach(k => delete memMap[k]);
+  localStorage.removeItem('fire_std_mem_v1');
+  updateProgress(); renderSidebar(); renderMain();
+}
+function exportProgress() {
+  const blob = new Blob([JSON.stringify({ memMap, wrong: Array.from(wrongSet) }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'fire_standards_progress.json'; a.click();
+}
+function importProgress(ev) {
+  const f = ev.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const d = JSON.parse(r.result);
+      if (d.memMap) { Object.keys(memMap).forEach(k => delete memMap[k]); Object.assign(memMap, d.memMap); localStorage.setItem('fire_std_mem_v1', JSON.stringify(memMap)); }
+      if (Array.isArray(d.wrong)) wrongSet = new Set(d.wrong);
+      updateProgress(); renderSidebar(); renderMain(); alert('진도 복원 완료!');
+    } catch { alert('올바른 백업 파일이 아닙니다.'); }
+  };
+  r.readAsText(f);
+}
+
+function updateProgress() {
+  let total = 0, done = 0;
+  MODULES.forEach(m => { if (m.rungs) { total += m.rungs.length; m.rungs.forEach((_, i) => { if (memMap[`${m.id}-${i}`]) done++; }); } });
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  document.getElementById('progText').textContent = `${done} / ${total} 시퀀스 랭 완료 (${pct}%)`;
+  document.getElementById('progFill').style.width = pct + '%';
+}
+
+function renderSidebar() {
+  const sb = document.getElementById('sidebar'); sb.innerHTML = '';
+  const cats = [...new Set(MODULES.filter(m => m.group === 'seq').map(m => m.cat))];
+  const addGroup = (label, list) => {
+    const d = document.createElement('div'); d.className = 'nav-group-label'; d.textContent = label; sb.appendChild(d);
+    list.forEach(m => {
+      const b = document.createElement('button');
+      b.className = 'nav-item' + (m.id === activeId ? ' active' : '');
+      let badge = 'TOOL';
+      if (m.id === 'quiz') badge = `${QUIZ_BANK.length}제`;
+      else if (m.rungs) badge = `${m.rungs.filter((_, i) => memMap[`${m.id}-${i}`]).length}/${m.rungs.length}`;
+      b.innerHTML = `<span>${m.name}</span><span class="nav-badge">${badge}</span>`;
+      b.onclick = () => switchView(m.id);
+      sb.appendChild(b);
     });
+  };
+  addGroup('★ 암기 · 퀴즈 · 계산기', MODULES.filter(m => m.group === 'study'));
+  cats.forEach(c => addGroup('⚡ ' + c, MODULES.filter(m => m.cat === c)));
+}
+function switchView(id) { activeId = id; document.getElementById('searchInput').value = ''; renderSidebar(); renderMain(); }
 
-    document.getElementById('valveTypeSelect').addEventListener('change', (e) => {
-      updateValveType(e.target.value);
-    });
+function getRungState(key, steps) {
+  if (!stateMap[key]) stateMap[key] = steps.map(st => st.type === 'b' ? false : (st.type === 'or' ? st.items.map(() => false) : false));
+  return stateMap[key];
+}
+function computeRungFlow(steps, rState) {
+  const wireHot = []; let flow = true;
+  for (let i = 0; i < steps.length; i++) {
+    wireHot.push(flow);
+    const st = steps[i];
+    if (st.type === 'out' || st.type === 'pen') continue;
+    const closed = st.type === 'b' ? !rState[i] : (st.type === 'or' ? rState[i].some(Boolean) : !!rState[i]);
+    if (!closed) flow = false;
+  }
+  return { wireHot, finalFlow: flow };
+}
 
-    document.getElementById('modeExploreBtn').addEventListener('click', () => setStudyMode('EXPLORE'));
-    document.getElementById('modeClozeBtn').addEventListener('click', () => setStudyMode('CLOZE'));
-    document.getElementById('modeQuizBtn').addEventListener('click', () => setStudyMode('QUIZ'));
+function renderMain() {
+  const main = document.getElementById('mainArea');
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  if (!q) {
+    if (activeId === 'study_num') return renderNumberMatrix(main);
+    if (activeId === 'study_trap') return renderTrapNotes(main);
+    if (activeId === 'quiz') return renderQuiz(main);
+    if (activeId === 'sim') return renderSimulator(main);
+  }
+  let list = [];
+  if (q) {
+    MODULES.filter(m => m.rungs).forEach(m => m.rungs.forEach((r, idx) => {
+      const blob = (r.title + ' ' + (r.tip || '') + ' ' + r.steps.map(s => s.text || (s.items || []).join(' ')).join(' ')).toLowerCase();
+      if (blob.includes(q)) list.push({ mod: m, rung: r, key: `${m.id}-${idx}` });
+    }));
+    main.innerHTML = `<div class="module-header"><h2>🔍 "${escapeHtml(q)}" 검색 결과 (${list.length}개)</h2><span>핵심 수치와 키워드를 클릭해 통전·빈칸 테스트를 해보세요.</span></div>`;
+  } else {
+    const mod = MODULES.find(m => m.id === activeId);
+    mod.rungs.forEach((r, idx) => list.push({ mod, rung: r, key: `${mod.id}-${idx}` }));
+    main.innerHTML = `<div class="module-header"><h2>${mod.name}</h2><span>${mod.desc}</span></div>`;
+  }
+  if (!list.length) { main.innerHTML += `<div style="padding:30px; text-align:center; color:#64748b;">검색 결과가 없습니다.</div>`; return; }
 
-    document.getElementById('btnRevealAllCloze').addEventListener('click', () => {
-      appState.revealAllCloze = !appState.revealAllCloze;
-      renderPartInspector();
-    });
-
-    document.getElementById('btnFireSim').addEventListener('click', startFireSimulation);
-    document.getElementById('btnStopSim').addEventListener('click', () => stopFireSimulation(false));
-
-    document.getElementById('quickBuildingSelect').addEventListener('change', updateQuickCalculator);
-
-    document.querySelectorAll('.pq-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.pq-btn').forEach(b => {
-          b.className = 'pq-btn px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 hover:bg-rose-600 hover:text-white cursor-pointer';
+  list.forEach(({ rung, key }) => {
+    const rState = getRungState(key, rung.steps);
+    const { wireHot, finalFlow } = computeRungFlow(rung.steps, rState);
+    const hasPen = rung.steps.some(s => s.type === 'pen');
+    const isMem = !!memMap[key];
+    const rungEl = document.createElement('div');
+    rungEl.className = 'rung' + (isMem ? ' memorized' : '') + (finalFlow ? (hasPen ? ' energized-pen' : ' energized') : '');
+    const top = document.createElement('div'); top.className = 'rung-top';
+    top.innerHTML = `<div class="rung-title">${rung.title}</div><div style="display:flex;gap:6px;"><button class="btn" onclick="toggleMem('${key}')" style="${isMem?'background:#065f46;border-color:#10b981;color:#fff;':''}">${isMem?'✅ 암기완료':'⬜ 암기체크'}</button><button class="btn" onclick="toggleWholeRung('${key}')">${finalFlow?'⚡ 차단':'▶ 일괄통전'}</button></div>`;
+    rungEl.appendChild(top);
+    if (rung.tip) { const tipEl = document.createElement('div'); tipEl.className = 'rung-sub-tip'; tipEl.innerHTML = formatText(rung.tip); rungEl.appendChild(tipEl); }
+    const flowDiv = document.createElement('div'); flowDiv.className = 'ladder-flow'; flowDiv.innerHTML = `<div class="rail-left"></div>`;
+    rung.steps.forEach((st, sIdx) => {
+      const wSeg = document.createElement('div'); wSeg.className = 'wire-seg'; wSeg.innerHTML = `<div class="wire-line ${wireHot[sIdx]?'hot':''}"></div>`; flowDiv.appendChild(wSeg);
+      if (st.type === 'or') {
+        const grp = document.createElement('div'); grp.className = 'or-group'; grp.innerHTML = `<div class="or-label">OR 병렬 분기 (택1 충족 시 도통)</div>`;
+        st.items.forEach((txt, iIdx) => {
+          const isOn = rState[sIdx][iIdx];
+          const item = document.createElement('div'); item.className = 'or-item' + (isOn ? ' on' : '');
+          item.innerHTML = `<span class="or-sym">${isOn?'┤●├─':'┤ ├─'}</span><span>${formatText(txt)}</span>`;
+          item.onclick = () => { rState[sIdx][iIdx] = !rState[sIdx][iIdx]; renderMain(); };
+          grp.appendChild(item);
         });
-        btn.className = 'pq-btn px-2 py-0.5 rounded text-[10px] font-bold bg-rose-600 text-white cursor-pointer';
-
-        const mode = btn.getAttribute('data-pq');
-        const textBox = document.getElementById('pqStatusText');
-        if (mode === '0') {
-          textBox.innerHTML = '⚠️ <strong>체절운전(<span class="math-var">Q</span> = 0%):</strong> 유량조절밸브 완전 폐쇄 시 토출압력은 정격토출압력의 <strong>140% 이하</strong>이어야 하며, 체절압력 미만에서 순환배관 릴리프밸브가 개방됩니다.';
-        } else if (mode === '100') {
-          textBox.innerHTML = '✅ <strong>정격운전(<span class="math-var">Q</span> = 100%):</strong> 정격토출량(<span class="math-var">N</span> × 80 L/min 이상) 토출 시 정격토출압력(<strong>100%</strong>, 말단 헤드 0.1~1.2 MPa)을 충족합니다.';
-        } else {
-          textBox.innerHTML = '🔥 <strong>과부하운전(<span class="math-var">Q</span> = 150%):</strong> 정격토출량의 150% 유량으로 개방 운전 시 토출압력은 정격토출압력의 <strong>65% 이상</strong>이 유지되어야 합격입니다.';
-        }
-      });
+        flowDiv.appendChild(grp);
+      } else if (st.type === 'out' || st.type === 'pen') {
+        const coil = document.createElement('div'); coil.className = `coil type-${st.type}` + (finalFlow?' on':'');
+        coil.innerHTML = `<div class="coil-head">${st.type==='pen'?'(🚨 금지·제재 출력)':'(✅ 기준 적합/설치)'}</div><div>${formatText(st.text)}</div>`;
+        flowDiv.appendChild(coil);
+      } else {
+        const node = document.createElement('div'); const val = rState[sIdx];
+        let cls = `node type-${st.type}`, sym = '┤ ├─ a접점';
+        if (st.type === 'a') { if (val) cls += ' closed'; sym = val ? '┤●├─ ON' : '┤ ├─ AND'; }
+        else if (st.type === 'b') { cls += val ? ' tripped' : ' closed'; sym = val ? '┤/├─ 차단(예외)' : '┤/├─ 단서(정상)'; }
+        else if (st.type === 't') { if (val) cls += ' closed'; sym = val ? '⏱ [T 완료]' : '⏱ [T 타이머]'; }
+        else if (st.type === 'c') { if (val) cls += ' closed'; sym = val ? '⚖ [기준충족]' : '⚖ [비교기]'; }
+        node.className = cls; node.innerHTML = `<div class="node-head">${sym}</div><div>${formatText(st.text)}</div>`;
+        node.onclick = () => { rState[sIdx] = !rState[sIdx]; renderMain(); };
+        flowDiv.appendChild(node);
+      }
     });
+    const endW = document.createElement('div'); endW.className = 'wire-seg'; endW.innerHTML = `<div class="wire-line ${finalFlow?'hot':''}"></div>`;
+    flowDiv.appendChild(endW); flowDiv.innerHTML += `<div class="rail-right"></div>`;
+    rungEl.appendChild(flowDiv); main.appendChild(rungEl);
+  });
+}
 
-    // 초기화 실행
-    window.addEventListener('DOMContentLoaded', () => {
-      renderPartInspector();
-      updateQuickCalculator();
-    });
-  </script>
+function toggleWholeRung(key) {
+  const [mId, idx] = key.split('-'); const rung = MODULES.find(m => m.id === mId).rungs[Number(idx)];
+  const rState = getRungState(key, rung.steps); const { finalFlow } = computeRungFlow(rung.steps, rState);
+  rung.steps.forEach((st, i) => {
+    if (st.type === 'b') rState[i] = false; else if (st.type === 'or') rState[i] = st.items.map((_, k) => !finalFlow && k === 0);
+    else if (st.type !== 'out' && st.type !== 'pen') rState[i] = !finalFlow;
+  });
+  renderMain();
+}
+function energizeAllVisible() {
+  const mod = MODULES.find(m => m.id === activeId); if (!mod || !mod.rungs) return;
+  mod.rungs.forEach((r, idx) => {
+    const rState = getRungState(`${mod.id}-${idx}`, r.steps);
+    r.steps.forEach((st, i) => { if (st.type==='b') rState[i]=false; else if (st.type==='or') rState[i]=st.items.map((_,k)=>k===0); else if (st.type!=='out'&&st.type!=='pen') rState[i]=true; });
+  });
+  renderMain();
+}
+function resetContacts() { Object.keys(stateMap).forEach(k => delete stateMap[k]); renderMain(); }
+
+// ==================== STUDY VIEW 1: NUMBER MATRIX ====================
+function renderNumberMatrix(main) {
+  const t1 = [
+    ['소화기구 (101)', '능력단위: 위락 {{30㎡}} / 문집·의료·장례·문화재 {{50㎡}} / 공동·근생·전시·공장 등 {{100㎡}} / 그외 {{200㎡}} (내화+불연·준불연·난연 {{2배}}) | 거실구획 {{33㎡}}↑ | 보행: 소형 {{20m}} / 대형 {{30m}} / D급 {{20m}} / 가스연소기 {{10m}} | 비치높이 {{1.5m}}↓(주차장 표지 {{1.5m}}↑) | 간이소화용구 {{1/2}}↓(모래 {{50L}}·질석 {{80L}}={{0.5단위}}) | 주방 가스탐지 {{30cm}}↓ | 자동확산 {{10㎡↓}} 1개 / 초과 2개 | 부속 {{25㎡}}(주방)·{{50㎡}}(전기·가스제조) | CO₂·할로겐 {{20㎡↓}} 금지'],
+    ['상수도소화용수 (401)', '수도배관 {{75mm}}↑ → 소화전 {{100mm}}↑ | 수평투영면 {{140m}}↓ | 지상식 접결구 {{0.5~1m}} | 2026 표지: 폭 {{35cm}} · 높이 {{60cm}} · 지주 {{100cm}} · 상단 {{14cm}} · 하단 {{8cm}}'],
+    ['소화수조·저수조 (402)', '소방차 접근 {{2m}}↓ | 기준면적: 1·2층 합 15,000㎡↑={{7,500㎡}}, 그밖={{12,500㎡}} (× {{20㎥}}) | 투입구 {{0.6m}}↑({{80㎥}} 미만 1개 / 이상 2개) | 채수구 {{65mm}}↑({{0.5~1m}}; {{40↓}} 1개 / {{40~100↓}} 2개 / {{100↑}} 3개) | 유수 {{0.8㎥/min}}↑ 면제 | 지하 {{4.5m}}↑ 가압: {{1,100 / 2,200 / 3,300 L/min}} | 옥상 지상압력 {{0.15MPa}}↑ | 물올림 {{100L}}↑·{{15mm}}↑'],
+    ['연결송수관 (502)', '송수구 {{0.5~1m}} · {{65mm}} 쌍구 | 주배관 {{100mm}}↑ | {{31m}}↑·지상 {{11층}}↑ 습식 | 내압 {{1.2MPa}} | 시험배관 정격 {{175%}}↑ | 방수구: 계단/부속실 {{5m}}↓ · 수평 {{25m/50m}} · {{11층↑}} 쌍구 · {{0.5~1m}} · {{65mm}} | 방수기구함: {{3개층}}마다(호스 {{15m}}) | {{70m}}↑ 펌프: {{2,400}}(계단아파트 {{1,200}})+개당 {{800}}(400) · 체절 {{140%}}↓ · {{150%}}시 {{65%}}↑ · 시험수조 {{150%×5분}} · 노즐 {{0.35MPa}}↑ · 스위치 송수구 {{5m}}내({{0.8~1.5m}}, {{1.5mm}} 강판함) · 챔버 {{100L}}↑ · 충압 {{+0.2MPa}} · 전원/연료 {{20분}}↑'],
+    ['연결살수 (503)', '가스 송수구 {{20m}}↑(1.5×2.5m 철콘벽 예외) | 개방형 1구역 {{10개}}↓(단구가능) | 전용헤드 구경: 1개 {{32}}·2개 {{40}}·3개 {{50}}·4·5개 {{65}}·6~10개 {{80mm}} | 교차 최소 {{40mm}}↑ | 시험배관 {{25mm}}↑ | 청소구 {{40mm}}↑ | 개방형 기울기 {{1/100}}↑ | 한쪽 가지 {{8개}}↓ | 행거: 가지 {{3.5m}}(상향 {{8cm}}↑)·교차/수평 {{4.5m}} | 수평거리: 전용 {{3.7m}} / SP {{2.3m}}(높이 {{2.1m}}↓ 살수분포) | 반경 {{60cm}}(벽 {{10cm}}) · 부착면 {{30cm}}↓ · 장애물 폭 {{3배}} | 개구부 {{2.5m}}/{{15cm}}(상시출입 9m↓ {{1.2m}}) | 측벽 {{3.6m}}(폭 4.5~9m 양쪽) | 가스헤드 {{3.7m}}↓']
+  ];
+  const t2 = [
+    ['표시온도 표 (101·503)', '평상시 최고주위온도 {{39℃ 미만}}→표시 {{79℃ 미만}} | {{39~64℃ 미만}}→{{79~121℃ 미만}} | {{64~106℃ 미만}}→{{121~162℃ 미만}} | {{106℃ 이상}}→{{162℃ 이상}} (4m↑ 공장창고는 온도무관 121℃↑ 가능)'],
+    ['천장·반자 사이 제외 (503)', '양쪽 불연 {{2m 미만}} | 양쪽 불연+벽불연+가연물X {{2m 이상}} | 한쪽 불연 {{1m 미만}} | 양쪽 불연외 {{0.5m 미만}} | 현관·로비 높이 {{20m 이상}} | 상점 내화·방화 {{500㎡ 미만}}(지하 150㎡↑ 제외)'],
+    ['높이 기준 총비교', '{{0.5~1m}}: 상수도 지상식 접결구 · 소화수조 채수구 · 연결송수관 송수구 및 방수구 · 연결살수 송수구 | {{0.8~1.5m}}: 연결송수관 수동스위치(송수구 5m내) | {{1.5m 이하}}: 소화기구 비치높이 (주차장 표지는 {{1.5m 이상}})']
+  ];
+  main.innerHTML = `
+    <div class="module-header"><h2>⏱ 1회차 5설비 수치·규격 총정리 매트릭스</h2><span>[🧠 빈칸 암기모드]를 켜면 모든 수치와 핵심어가 빈칸으로 가려집니다.</span></div>
+    <div class="section-divider">📘 1회차 5개 기준(101 · 401 · 402 · 502 · 503) 통합 수치표</div>
+    <div class="study-card" style="margin-bottom:14px;"><h3>📊 설비별 핵심 수치 전체</h3><table><thead><tr><th style="width:145px;">설비</th><th>거리 · 압력 · 구경 · 수량 · 용량 총정리</th></tr></thead><tbody>${t1.map(([k,v])=>`<tr><td><b>${formatText(k)}</b></td><td>${formatText(v)}</td></tr>`).join('')}</tbody></table></div>
+    <div class="study-card"><h3>📊 공통 온도표 · 설치제외 · 높이 비교</h3><table><thead><tr><th style="width:165px;">구분</th><th>핵심 기준</th></tr></thead><tbody>${t2.map(([k,v])=>`<tr><td><b>${formatText(k)}</b></td><td>${formatText(v)}</td></tr>`).join('')}</tbody></table></div>`;
+}
+
+// ==================== STUDY VIEW 2: TRAP NOTES ====================
+function renderTrapNotes(main) {
+  const cards = [
+    {
+      title: '1. 높이 · 거리 · 표지 색상 함정 모음', badge: '접결구/송수구 0.5~1m vs 수동스위치 0.8~1.5m vs 소화기 1.5m↓',
+      rows: [
+        ['높이 3단 구분', '접결구·채수구·송수구·방수구={{0.5~1m}} | 연결송수관 수동스위치={{0.8~1.5m}} | 소화기={{1.5m 이하}}(주차장 표지는 {{1.5m 이상}})'],
+        ['상수도 표지(2026신설)', '안쪽 문자 {{흰색}}·{{붉은 바탕}} / 바깥쪽 문자 {{노란색}}·{{파란 바탕}} · {{반사재료}} (규격: 폭35·높이60·지주100cm)'],
+        ['투입구 vs 채수구', '흡수관투입구({{0.6m}}↑): {{80㎥}} 기준 1/2개 | 채수구({{65mm}}↑): {{40/100㎥}} 기준 1/2/3개']
+      ]
+    },
+    {
+      title: '2. 밸브 순서 · 배관 재질 · 겸용 함정', badge: '습식(송·자·체) vs 건식(송·자·체·자)',
+      rows: [
+        ['밸브 설치 순서', '연결송수관 습식 & 연결살수 폐쇄형={{송·자·체}} | 연결송수관 건식={{송·자·체·자}} | 연결살수 개방형={{송·자}}(체크X)'],
+        ['배관 재질 1.2MPa', '1.2MPa 미만(3507·5301습식·3576/3595·4311) / 이상(3562·3583[연결살수·송수관]) · 합성수지배관 3장소(지하매설·내화덕트피트·불연/준불연천장반자 상시만수)'],
+        ['송수구 겸용 규칙', '연결송수관+옥내소화전={{연결송수관}} 기준 | 연결살수+SP계열={{SP}} 기준 | 연결살수+옥내소화전={{옥내소화전}} 기준']
+      ]
+    },
+    {
+      title: '3. 소화기구 감소 · 적응성 · 부속용도 함정', badge: '할론 A급X / 무인변전소는 감소 가능!',
+      rows: [
+        ['적응성 함정', '{{할론}}은 A급 불가(B·C만) | CO₂·할론은 B·C만 | {{할로겐·인산염·고체에어로졸}}은 A·B·C 가능 | {{D급}}은 마른모래·팽창질석/진주암'],
+        ['소형소화기 감소', '원칙 2/3(대형시 1/2) 감소 가능하나 11층↑ 및 15개 용도 불가 — 단, 업무시설 중 {{무인변전소}}는 감소 가능!'],
+        ['부속용도 300kg 기준', '연료 저장실(300kg↓ 제외): {{5단위×2 + 대형×1}} | 연료외 제조사용(50㎡↓도 2개↑): <200kg(3단×2), 200~300(5단×2/50㎡당5단×1), ≥300(대형×2/50㎡당5단×1)']
+      ]
+    },
+    {
+      title: '4. 연결송수관 · 연결살수 고빈출 단서', badge: '부속실 출입구 5m(2026신설) · 70m↑ 펌프 · 10개 이하',
+      rows: [
+        ['방수구 보행거리(2026)', '계단(또는 {{부속실 옥내 출입구}})로부터 보행 {{5m}} 이내 | 11층↑ 쌍구형(단, 아파트 또는 SP유효&2개소↑ 시 단구 가능)'],
+        ['성능시험배관(2024)', '연결송수관 유량측정장치 직관부 정격토출량 {{175%}}↑ · 전용수조 정격 {{150%}}로 {{5분}}↑ 시험량 · 배수설비'],
+        ['연결살수 헤드수 제한', '개방형 1송수구역 살수헤드 ≤ {{10개}}(10개↓ 시 단구 송수구 가능) | 한쪽 가지배관 헤드 ≤ {{8개}} | 토너먼트 금지']
+      ]
+    }
+  ];
+  main.innerHTML = `<div class="module-header"><h2>⚡ 1회차 두문자 & 고빈출 함정 비교 노트</h2><span>시험에서 헷갈리기 쉬운 수치·단서들을 한눈에 비교했습니다.</span></div><div class="grid-2">${cards.map(c=>`<div class="study-card"><h3>${c.title}</h3><div class="mnemonic-badge">${formatText(c.badge)}</div><table><tbody>${c.rows.map(([k,v])=>`<tr><th style="width:130px;">${formatText(k)}</th><td>${formatText(v)}</td></tr>`).join('')}</tbody></table></div>`).join('')}</div>`;
+}
+
+// ==================== STUDY VIEW 3: QUIZ ====================
+function getFilteredQuiz() {
+  if (quizFilter === 'WRONG') return QUIZ_BANK.map((q, i) => ({ ...q, origIdx: i })).filter(q => wrongSet.has(q.origIdx));
+  if (quizFilter !== 'ALL') return QUIZ_BANK.map((q, i) => ({ ...q, origIdx: i })).filter(q => q.cat === quizFilter);
+  return QUIZ_BANK.map((q, i) => ({ ...q, origIdx: i }));
+}
+function setQuizFilter(f) { quizFilter = f; quizIdx = 0; renderMain(); }
+
+function renderQuiz(main) {
+  const list = getFilteredQuiz();
+  if (quizIdx >= list.length) quizIdx = 0;
+  const cats = ['ALL', '소화기구', '상수도용수', '소화수조', '연결송수관', '연결살수', 'WRONG'];
+  main.innerHTML = `
+    <div class="module-header"><h2>📝 1회차 실전 암기 퀴즈 (${list.length}문항)</h2><span>정답 누적: <b style="color:#10b981;">${quizScore}회</b> | 오답 노트: <b style="color:#ef4444;">${wrongSet.size}문항</b></span></div>
+    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;">
+      ${cats.map(c => `<button class="btn ${quizFilter===c?'active-filter':''}" onclick="setQuizFilter('${c}')">${c==='ALL'?'전체('+QUIZ_BANK.length+')':c==='WRONG'?'🚨 오답만('+wrongSet.size+')':c}</button>`).join('')}
+    </div>`;
+  if (!list.length) { main.innerHTML += `<div class="quiz-box">해당 분류에 문항이 없습니다.</div>`; return; }
+  const q = list[quizIdx];
+  const box = document.createElement('div'); box.className = 'quiz-box';
+  box.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.78rem; color:#94a3b8;">
+      <span>문항 ${quizIdx + 1} / ${list.length} [${q.cat}]</span>
+      <div style="display:flex; gap:6px;"><button class="btn" onclick="prevQuiz(${list.length})">◀ 이전</button><button class="btn" onclick="nextQuiz(${list.length})">다음 ▶</button><button class="btn" onclick="restartQuiz()">🔄 리셋</button></div>
+    </div>
+    <div class="quiz-q">${escapeHtml(q.q)}</div><div class="quiz-opts" id="quizOpts"></div><div id="quizExp"></div>`;
+  main.appendChild(box);
+  q.opts.forEach((opt, i) => {
+    const b = document.createElement('button'); b.className = 'quiz-opt'; b.textContent = `${i + 1}. ${opt}`;
+    b.onclick = () => answerQuiz(i, q); document.getElementById('quizOpts').appendChild(b);
+  });
+  quizAnswered = false;
+}
+function answerQuiz(sel, q) {
+  if (quizAnswered) return; quizAnswered = true;
+  document.querySelectorAll('.quiz-opt').forEach((b, i) => { if (i === q.ans) b.classList.add('correct'); else if (i === sel) b.classList.add('wrong'); });
+  if (sel === q.ans) { quizScore++; wrongSet.delete(q.origIdx); } else wrongSet.add(q.origIdx);
+  document.getElementById('quizExp').innerHTML = `<div class="quiz-exp"><b>${sel===q.ans?'✅ 정답입니다!':'❌ 오답입니다!'}</b><br>${escapeHtml(q.exp)}</div>`;
+}
+function nextQuiz(len) { quizIdx = (quizIdx + 1) % len; renderMain(); }
+function prevQuiz(len) { quizIdx = (quizIdx - 1 + len) % len; renderMain(); }
+function restartQuiz() { quizIdx = 0; quizScore = 0; wrongSet.clear(); renderMain(); }
+
+// ==================== STUDY VIEW 4: ENGINEERING CALCULATORS ====================
+function renderSimulator(main) {
+  main.innerHTML = `
+    <div class="module-header"><h2>🎛️ 1회차 공학 계산 시뮬레이터 (소화기구 · 소화수조 · 연결송수관)</h2><span>수치를 입력하면 기준에 따라 능력단위, 소요수량, 채수구, 펌프 양수·토출량이 자동 산출됩니다.</span></div>
+    <div class="grid-2">
+      <div class="study-card">
+        <h3>🧯 소화기구 능력단위 · 완화 · 감소 계산기</h3>
+        <div class="form-row"><label>용도 구분</label><select id="c-use" onchange="calcExt()"><option value="30">위락시설 (30㎡/단위)</option><option value="50">문집(전시·동식물외)·의료·장례·문화재 (50㎡)</option><option value="100" selected>공동·근생·판매·업무·공장·창고 등 (100㎡)</option><option value="200">그 밖의 대상물 (200㎡)</option></select></div>
+        <div class="form-row"><label>해당 층 바닥면적 (㎡)</label><input type="number" id="c-area" value="1200" oninput="calcExt()"></div>
+        <div class="form-row"><label>내화구조+불연/준불연/난연 마감</label><select id="c-fireproof" onchange="calcExt()"><option value="no">미충족 (1배)</option><option value="yes">충족 (기준면적 2배 완화)</option></select></div>
+        <div class="form-row"><label>옥내/SP/물분무/옥외/대형 설치</label><select id="c-other" onchange="calcExt()"><option value="no">미설치</option><option value="yes">설치됨</option></select></div>
+        <div class="form-row"><label>11층↑ 또는 근생·의료 등 감소제외용도</label><select id="c-excl" onchange="calcExt()"><option value="yes">제외용도 해당 (감소 불가)</option><option value="no">해당안함 (또는 무인변전소)</option></select></div>
+        <div class="res-grid" id="c-ext-res"></div>
+      </div>
+
+      <div class="study-card">
+        <h3>💧 소화수조·저수조 수량 · 채수구 · 가압송수 계산기</h3>
+        <div class="form-row"><label>특정소방대상물 연면적 (㎡)</label><input type="number" id="w-total" value="28000" oninput="calcTank()"></div>
+        <div class="form-row"><label>1층+2층 바닥면적 합계 (㎡)</label><input type="number" id="w-12" value="16000" oninput="calcTank()"></div>
+        <div class="form-row"><label>지하 깊이 (내부바닥까지 m)</label><input type="number" step="0.1" id="w-depth" value="5.2" oninput="calcTank()"></div>
+        <div class="res-grid" id="w-tank-res"></div>
+      </div>
+
+      <div class="study-card">
+        <h3>🚒 연결송수관 펌프 · 수조 · 방수구 판정기</h3>
+        <div class="form-row"><label>건축물 유형</label><select id="p-type" onchange="calcPipe()"><option value="gen">일반 건축물</option><option value="apt">계단식 아파트</option></select></div>
+        <div class="form-row"><label>지상 층수 (층)</label><input type="number" id="p-fl" value="25" oninput="calcPipe()"></div>
+        <div class="form-row"><label>최상층 방수구 높이 (m)</label><input type="number" id="p-h" value="78" oninput="calcPipe()"></div>
+        <div class="form-row"><label>해당 층 방수구 개수 (개)</label><input type="number" id="p-no" value="4" oninput="calcPipe()"></div>
+        <div class="res-grid" id="p-pipe-res"></div>
+      </div>
+    </div>`;
+  calcExt(); calcTank(); calcPipe();
+}
+
+function calcExt() {
+  const base = Number(document.getElementById('c-use').value);
+  const area = Number(document.getElementById('c-area').value) || 0;
+  const dbl = document.getElementById('c-fireproof').value === 'yes';
+  const other = document.getElementById('c-other').value === 'yes';
+  const excl = document.getElementById('c-excl').value === 'yes';
+  const stdArea = base * (dbl ? 2 : 1);
+  const units = Math.ceil(area / stdArea);
+  const canReduce = other && !excl;
+  const reduced = canReduce ? Math.ceil(units / 3) : units;
+  document.getElementById('c-ext-res').innerHTML = [
+    [`적용 기준면적: ${stdArea}㎡/단위`, true],
+    [`기본 필요 능력단위: ${units}단위`, true],
+    [canReduce ? `2/3 감소 적용 후: ${reduced}단위 (대형 둔 경우 1/2)` : (other ? '제외용도 해당 → 소형 감소 불가' : '감소 미적용'), canReduce],
+    [`간이소화용구 최대 허용: ${Math.floor(units/2)}단위 (노유자 제외)`, false]
+  ].map(([t,on])=>`<span class="res-pill ${on?'req':''}">${t}</span>`).join('');
+}
+
+function calcTank() {
+  const total = Number(document.getElementById('w-total').value) || 0;
+  const a12 = Number(document.getElementById('w-12').value) || 0;
+  const depth = Number(document.getElementById('w-depth').value) || 0;
+  const std = a12 >= 15000 ? 7500 : 12500;
+  const mult = Math.ceil(total / std) || 1;
+  const vol = mult * 20;
+  const hole = vol < 80 ? 1 : 2;
+  const port = vol < 40 ? 1 : (vol < 100 ? 2 : 3);
+  const flow = vol < 40 ? 1100 : (vol < 100 ? 2200 : 3300);
+  const needPump = depth >= 4.5;
+  document.getElementById('w-tank-res').innerHTML = [
+    [`기준면적: ${std.toLocaleString()}㎡`, true],
+    [`소요수량: ${vol}㎥ (20㎥ × ${mult})`, true],
+    [`흡수관투입구(0.6m↑): ${hole}개↑`, true],
+    [`채수구(65mm↑, 0.5~1m): ${port}개`, true],
+    [needPump ? `지하 ${depth}m ≥ 4.5m → 가압송수 필수 (${flow.toLocaleString()} L/min↑)` : `지하 ${depth}m < 4.5m → 가압송수 불필요`, needPump]
+  ].map(([t,on])=>`<span class="res-pill ${on?'req':''}">${t}</span>`).join('');
+}
+
+function calcPipe() {
+  const type = document.getElementById('p-type').value;
+  const fl = Number(document.getElementById('p-fl').value) || 0;
+  const h = Number(document.getElementById('p-h').value) || 0;
+  const no = Math.min(Number(document.getElementById('p-no').value) || 1, 5);
+  const wet = h >= 31 || fl >= 11;
+  const needPump = h >= 70;
+  const baseFlow = type === 'apt' ? 1200 : 2400;
+  const addFlow = no > 3 ? (no - 3) * (type === 'apt' ? 400 : 800) : 0;
+  const totFlow = baseFlow + addFlow;
+  const tankM3 = ((totFlow * 1.5 * 5) / 1000).toFixed(1);
+  const dual = fl >= 11 && type !== 'apt';
+  const boxCnt = Math.ceil(fl / 3);
+  document.getElementById('p-pipe-res').innerHTML = [
+    [wet ? '배관방식: 습식설비 필수 (31m↑ 또는 11층↑)' : '건식 가능 (31m↓ & 11층↓)', wet],
+    [dual ? '11층 이상 방수구: 쌍구형' : '단구형 가능 (아파트 또는 11층 미만)', true],
+    [needPump ? `최상층 ${h}m ≥ 70m → 펌프 필수 (${totFlow.toLocaleString()} L/min, 노즐 0.35MPa↑)` : `최상층 ${h}m < 70m → 가압송수 불필요`, needPump],
+    [needPump ? `성능시험 전용수조(150%×5분): ${tankM3}㎥↑ · 비상전원 20분↑` : `방수기구함(3개층마다): 최소 ${boxCnt}개소`, true]
+  ].map(([t,on])=>`<span class="res-pill ${on?'req':''}">${t}</span>`).join('');
+}
+
+// Init
+updateProgress(); renderSidebar(); renderMain();
+</script>
 </body>
 </html>
